@@ -186,7 +186,7 @@ app.get('/api/questions', async (req, res) => {
   try {
     const { category, difficulty, limit = 15 } = req.query;
     let query = `
-      SELECT q.id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
+      SELECT q.id, q.category_id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
              q.correct_answer, q.difficulty, c.name as category_name
       FROM questions q
       JOIN categories c ON q.category_id = c.id
@@ -239,7 +239,7 @@ app.get('/api/game/start', async (req, res) => {
   try {
     const { category } = req.query;
     let query = `
-      SELECT q.id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
+      SELECT q.id, q.category_id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
              q.correct_answer, q.difficulty, c.name as category_name
       FROM questions q
       JOIN categories c ON q.category_id = c.id
