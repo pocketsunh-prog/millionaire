@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+.env.local
+
+# Build output
+build/
+*.apk
+*.aab
+
+# Signing credentials — NEVER commit
+keystore.properties
+*.keystore
+*.jks
+
+# Local SDK path
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

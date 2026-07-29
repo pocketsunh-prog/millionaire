@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvQuestionNumber"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Question 1 of 15"
+            android:textColor="@color/gold"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCurrentPrize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$100"
+            android:textColor="@color/gold"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn5050"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="50:50"
+            android:textSize="11sp"
+            android:textColor="@color/white"
+            android:background="@drawable/btn_lifeline"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnAudience"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="👥 Audience"
+            android:textSize="11sp"
+            android:textColor="@color/white"
+            android:background="@drawable/btn_lifeline"
+            android:layout_marginHorizontal="4dp" />
+
+        <Button
+            android:id="@+id/btnPhone"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="📞 Phone"
+            android:textSize="11sp"
+            android:textColor="@color/white"
+            android:background="@drawable/btn_lifeline"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.3" />
+
+    <TextView
+        android:id="@+id/tvQuestion"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:gravity="center"
+        android:padding="24dp"
+        android:layout_marginHorizontal="16dp"
+        android:text="Question goes here?"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_question_box" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.3" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp">
+
+        <Button
+            android:id="@+id/btnAnswerA"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="A: Option A"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:gravity="start|center_vertical"
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/btn_answer"
+            android:layout_marginBottom="8dp"
+            android:drawableStart="@drawable/ic_letter_a"
+            android:drawablePadding="12dp" />
+
+        <Button
+            android:id="@+id/btnAnswerB"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="B: Option B"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:gravity="start|center_vertical"
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/btn_answer"
+            android:layout_marginBottom="8dp"
+            android:drawableStart="@drawable/ic_letter_b"
+            android:drawablePadding="12dp" />
+
+        <Button
+            android:id="@+id/btnAnswerC"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="C: Option C"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:gravity="start|center_vertical"
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/btn_answer"
+            android:layout_marginBottom="8dp"
+            android:drawableStart="@drawable/ic_letter_c"
+            android:drawablePadding="12dp" />
+
+        <Button
+            android:id="@+id/btnAnswerD"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="D: Option D"
+            android:textSize="15sp"
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:gravity="start|center_vertical"
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/btn_answer"
+            android:drawableStart="@drawable/ic_letter_d"
+            android:drawablePadding="12dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.3" />
+
+    <Button
+        android:id="@+id/btnWalkAway"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="Walk Away"
+        android:textColor="@color/light_gray"
+        android:background="@android:color/transparent"
+        android:layout_gravity="center"
+        android:textSize="14sp" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        android:indeterminateTint="@color/gold" />
+
+</LinearLayout>

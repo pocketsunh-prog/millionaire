@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who Wants to Be a Millionaire - 3D Edition</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="audio-controls">
+      <button id="btn-music" class="audio-btn" title="Toggle Music">&#9835;</button>
+      <button id="btn-sfx" class="audio-btn" title="Toggle SFX">&#128266;</button>
+    </div>
+
+    <div id="user-bar" class="hidden">
+      <div id="user-info-display">
+        <span id="user-avatar"></span>
+        <span id="user-name"></span>
+      </div>
+      <div id="user-stats-mini">
+        <span class="stat-item">🏆 <span id="mini-wins">0</span></span>
+        <span class="stat-item">💰 $<span id="mini-best">0</span></span>
+      </div>
+      <button id="btn-logout" class="logout-btn">LOGOUT</button>
+    </div>
+
+    <div id="ui-overlay">
+      <!-- Auth Screen -->
+      <div id="auth-screen" class="screen active">
+        <div id="auth-box">
+          <h1 class="game-title">WHO WANTS TO BE A</h1>
+          <h1 class="game-title gold">MILLIONAIRE</h1>
+          <h3 class="subtitle">3D Edition</h3>
+
+          <div id="auth-tabs">
+            <button class="auth-tab active" data-tab="login">LOGIN</button>
+            <button class="auth-tab" data-tab="register">REGISTER</button>
+          </div>
+
+          <form id="login-form" class="auth-form active">
+            <div class="input-group">
+              <input type="text" id="login-username" placeholder="Username" required minlength="3" maxlength="50" autocomplete="username">
+            </div>
+            <div class="input-group">
+              <input type="password" id="login-password" placeholder="Password" required minlength="4" autocomplete="current-password">
+            </div>
+            <button type="submit" class="menu-btn auth-submit">LOGIN</button>
+            <div id="login-error" class="auth-error"></div>
+          </form>
+
+          <form id="register-form" class="auth-form">
+            <div class="input-group">
+              <input type="text" id="reg-username" placeholder="Username" required minlength="3" maxlength="50" autocomplete="username">
+            </div>
+            <div class="input-group">
+              <input type="email" id="reg-email" placeholder="Email (optional)" autocomplete="email">
+            </div>
+            <div class="input-group">
+              <input type="password" id="reg-password" placeholder="Password" required minlength="4" autocomplete="new-password">
+            </div>
+            <div class="input-group">
+              <input type="password" id="reg-password-confirm" placeholder="Confirm Password" required minlength="4" autocomplete="new-password">
+            </div>
+            <div class="input-group avatar-select">
+              <label>Choose Avatar:</label>
+              <div id="avatar-options">
+                <button type="button" class="avatar-option selected" data-avatar="🎮">🎮</button>
+                <button type="button" class="avatar-option" data-avatar="🏆">🏆</button>
+                <button type="button" class="avatar-option" data-avatar="⭐">⭐</button>
+                <button type="button" class="avatar-option" data-avatar="🎯">🎯</button>
+                <button type="button" class="avatar-option" data-avatar="💎">💎</button>
+                <button type="button" class="avatar-option" data-avatar="🔥">🔥</button>
+                <button type="button" class="avatar-option" data-avatar="👑">👑</button>
+                <button type="button" class="avatar-option" data-avatar="🦁">🦁</button>
+              </div>
+            </div>
+            <button type="submit" class="menu-btn auth-submit">CREATE ACCOUNT</button>
+            <div id="register-error" class="auth-error"></div>
+          </form>
+
+          <button id="btn-guest" class="guest-btn">Continue as Guest</button>
+        </div>
+      </div>
+
+      <!-- Main Menu -->
+      <div id="main-menu" class="screen">
+        <h1 class="game-title">WHO WANTS TO BE A</h1>
+        <h1 class="game-title gold">MILLIONAIRE</h1>
+        <h3 class="subtitle">3D Edition</h3>
+        <div class="menu-buttons">
+          <button id="btn-start" class="menu-btn">START GAME</button>
+          <button id="btn-leaderboard" class="menu-btn">LEADERBOARD</button>
+          <button id="btn-profile" class="menu-btn">MY PROFILE</button>
+          <button id="btn-how-to" class="menu-btn">HOW TO PLAY</button>
+        </div>
+        <div id="category-select">
+          <label for="category-dropdown">Select Category:</label>
+          <select id="category-dropdown">
+            <option value="mixed">Mixed (All Categories)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Game Screen -->
+      <div id="game-screen" class="screen">
+        <div id="game-header">
+          <div id="player-info">
+            <span id="player-avatar-icon"></span>
+            <span id="player-name-display"></span>
+          </div>
+          <div id="question-counter">
+            Question <span id="current-q">1</span> / <span id="total-q">15</span>
+          </div>
+          <div id="prize-display">
+            $<span id="current-prize">100</span>
+          </div>
+        </div>
+
+        <div id="prize-ladder">
+          <div class="prize-item" data-level="15">$1,000,000</div>
+          <div class="prize-item" data-level="14">$500,000</div>
+          <div class="prize-item" data-level="13">$250,000</div>
+          <div class="prize-item" data-level="12">$125,000</div>
+          <div class="prize-item" data-level="11">$64,000</div>
+          <div class="prize-item guaranteed" data-level="10">$32,000</div>
+          <div class="prize-item" data-level="9">$16,000</div>
+          <div class="prize-item" data-level="8">$8,000</div>
+          <div class="prize-item" data-level="7">$4,000</div>
+          <div class="prize-item" data-level="6">$2,000</div>
+          <div class="prize-item guaranteed" data-level="5">$1,000</div>
+          <div class="prize-item" data-level="4">$500</div>
+          <div class="prize-item" data-level="3">$300</div>
+          <div class="prize-item" data-level="2">$200</div>
+          <div class="prize-item" data-level="1">$100</div>
+        </div>
+
+        <div id="question-area">
+          <div id="question-text"></div>
+          <div id="answers-grid">
+            <button class="answer-btn" data-answer="A">
+              <span class="answer-label">A:</span>
+              <span class="answer-text"></span>
+            </button>
+            <button class="answer-btn" data-answer="B">
+              <span class="answer-label">B:</span>
+              <span class="answer-text"></span>
+            </button>
+            <button class="answer-btn" data-answer="C">
+              <span class="answer-label">C:</span>
+              <span class="answer-text"></span>
+            </button>
+            <button class="answer-btn" data-answer="D">
+              <span class="answer-label">D:</span>
+              <span class="answer-text"></span>
+            </button>
+          </div>
+        </div>
+
+        <div id="lifelines">
+          <button class="lifeline-btn" id="lifeline-5050" title="50:50">
+            <span class="lifeline-icon">50:50</span>
+          </button>
+          <button class="lifeline-btn" id="lifeline-audience" title="Ask the Audience">
+            <span class="lifeline-icon">&#128101;</span>
+          </button>
+          <button class="lifeline-btn" id="lifeline-phone" title="Phone a Friend">
+            <span class="lifeline-icon">&#128222;</span>
+          </button>
+        </div>
+
+        <div id="audience-poll" class="hidden">
+          <div class="poll-bar-container">
+            <div class="poll-label">A</div>
+            <div class="poll-bar"><div class="poll-fill" id="poll-a"></div></div>
+            <div class="poll-percent" id="percent-a">0%</div>
+          </div>
+          <div class="poll-bar-container">
+            <div class="poll-label">B</div>
+            <div class="poll-bar"><div class="poll-fill" id="poll-b"></div></div>
+            <div class="poll-percent" id="percent-b">0%</div>
+          </div>
+          <div class="poll-bar-container">
+            <div class="poll-label">C</div>
+            <div class="poll-bar"><div class="poll-fill" id="poll-c"></div></div>
+            <div class="poll-percent" id="percent-c">0%</div>
+          </div>
+          <div class="poll-bar-container">
+            <div class="poll-label">D</div>
+            <div class="poll-bar"><div class="poll-fill" id="poll-d"></div></div>
+            <div class="poll-percent" id="percent-d">0%</div>
+          </div>
+        </div>
+
+        <button id="btn-quit" class="quit-btn">WALK AWAY</button>
+      </div>
+
+      <!-- Result Screen -->
+      <div id="result-screen" class="screen">
+        <div id="result-content">
+          <h2 id="result-title"></h2>
+          <div id="result-amount"></div>
+          <div id="result-message"></div>
+          <div id="result-new-record" class="hidden">🎉 NEW PERSONAL BEST!</div>
+          <div class="menu-buttons">
+            <button id="btn-play-again" class="menu-btn">PLAY AGAIN</button>
+            <button id="btn-back-menu" class="menu-btn">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard Screen -->
+      <div id="leaderboard-screen" class="screen">
+        <h2>LEADERBOARD</h2>
+        <div id="leaderboard-tabs">
+          <button class="lb-tab active" data-type="score">🏆 TOP SCORES</button>
+          <button class="lb-tab" data-type="wins">👑 MOST WINS</button>
+        </div>
+        <div id="leaderboard-list"></div>
+        <button id="btn-lb-back" class="menu-btn">BACK</button>
+      </div>
+
+      <!-- Profile Screen -->
+      <div id="profile-screen" class="screen">
+        <h2>MY PROFILE</h2>
+        <div id="profile-content">
+          <div id="profile-header">
+            <span id="profile-avatar"></span>
+            <h3 id="profile-username"></h3>
+          </div>
+          <div id="profile-stats">
+            <div class="profile-stat">
+              <span class="stat-value" id="stat-games">0</span>
+              <span class="stat-label">Games Played</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-value" id="stat-wins">0</span>
+              <span class="stat-label">Wins</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-value" id="stat-winrate">0%</span>
+              <span class="stat-label">Win Rate</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-value">$<span id="stat-best-score">0</span></span>
+              <span class="stat-label">Best Score</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-value" id="stat-best-question">0</span>
+              <span class="stat-label">Best Question</span>
+            </div>
+          </div>
+          <h4>Recent Games</h4>
+          <div id="profile-history"></div>
+        </div>
+        <button id="btn-profile-back" class="menu-btn">BACK</button>
+      </div>
+
+      <!-- How To Play Screen -->
+      <div id="howto-screen" class="screen">
+        <h2>HOW TO PLAY</h2>
+        <div class="howto-content">
+          <p><strong>Goal:</strong> Answer 15 questions correctly to win $1,000,000!</p>
+          <p><strong>Milestones:</strong> Reach question 5 ($1,000) and question 10 ($32,000) to guarantee a minimum prize.</p>
+          <p><strong>Lifelines:</strong></p>
+          <ul>
+            <li><strong>50:50</strong> - Removes two wrong answers</li>
+            <li><strong>Ask the Audience</strong> - Shows audience poll results</li>
+            <li><strong>Phone a Friend</strong> - Get a hint from a "friend"</li>
+          </ul>
+          <p><strong>Account Benefits:</strong> Track your stats, compete on the leaderboard, and show off your avatar!</p>
+        </div>
+        <button id="btn-howto-back" class="menu-btn">BACK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="/js/audio.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>

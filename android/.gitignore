@@ -1,0 +1,21 @@
+# Build output
+build/
+*.apk
+*.aab
+
+# Local SDK path
+local.properties
+
+# Signing credentials — NEVER commit
+keystore.properties
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
