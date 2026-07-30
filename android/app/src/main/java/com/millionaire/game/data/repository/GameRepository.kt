@@ -27,6 +27,15 @@ class GameRepository(context: Context) {
     private val db = DatabaseHelper(appContext)
     private val tag = "GameRepository"
 
+    /**
+     * Upper bound on how many questions [syncQuestions] requests from the server.
+     * SQLite's LIMIT is an upper bound (a value larger than the table simply returns
+     * every row), so setting this well above the real bank size ensures the whole bank
+     * is cached locally. A larger offline pool means each 15-question game samples from
+     * more questions, so repeats across games are far less frequent.
+     */
+    private const val SYNC_QUESTION_LIMIT = 5000
+
     /** ApiService bound to the user-configured server URL (see Settings). */
     private fun api(): ApiService = ApiClient.getService(appContext)
 
@@ -58,7 +67,11 @@ class GameRepository(context: Context) {
 
     suspend fun syncQuestions(): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = api().getQuestions(limit = 200)
+            // Fetch the entire question bank. LIMIT is an upper bound, so a value
+            // well above the bank size guarantees every question is cached locally.
+            // This keeps offline games varied: each draw of 15 then samples from the
+            // full bank instead of a small fixed subset, so repeats are rare.
+            val response = api().getQuestions(limit = SYNC_QUESTION_LIMIT)
             if (response.isSuccessful && response.body() != null) {
                 val questions = response.body()!!.map { map ->
                     Question(
