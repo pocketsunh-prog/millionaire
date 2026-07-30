@@ -1,0 +1,1002 @@
+[
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Who is often called the father of humanism during the Renaissance?",
+    option_a: "Francesco Petrarch",
+    option_b: "Leonardo da Vinci",
+    option_c: "Niccolo Machiavelli",
+    option_d: "Galileo Galilei",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which city is considered the birthplace of the Italian Renaissance?",
+    option_a: "Florence",
+    option_b: "Rome",
+    option_c: "Venice",
+    option_d: "Milan",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "What invention by Johannes Gutenberg helped spread Renaissance ideas?",
+    option_a: "The printing press with movable type",
+    option_b: "The telescope",
+    option_c: "The compass",
+    option_d: "The steam engine",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Martin Luther posted his Ninety-five Theses in which year?",
+    option_a: "1517",
+    option_b: "1492",
+    option_c: "1543",
+    option_d: "1607",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Who proposed the heliocentric theory that the Earth revolves around the Sun?",
+    option_a: "Nicolaus Copernicus",
+    option_b: "Ptolemy",
+    option_c: "Aristotle",
+    option_d: "Johannes Kepler",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Christopher Columbus reached the Americas in which year?",
+    option_a: "1492",
+    option_b: "1498",
+    option_c: "1502",
+    option_d: "1510",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which explorer led the first expedition to circumnavigate the globe?",
+    option_a: "Ferdinand Magellan",
+    option_b: "Christopher Columbus",
+    option_c: "Vasco da Gama",
+    option_d: "Vasco Nunez de Balboa",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Vasco da Gama discovered a sea route from Europe to which country?",
+    option_a: "India",
+    option_b: "China",
+    option_c: "Japan",
+    option_d: "Brazil",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which country was Louis XIV the king of?",
+    option_a: "France",
+    option_b: "Spain",
+    option_c: "England",
+    option_d: "Prussia",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "What was the nickname of Louis XIV of France?",
+    option_a: "The Sun King",
+    option_b: "The Iron King",
+    option_c: "The Wise King",
+    option_d: "The Great King",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which palace did Louis XIV build as a symbol of absolute monarchy?",
+    option_a: "Palace of Versailles",
+    option_b: "Buckingham Palace",
+    option_c: "Schonbrunn Palace",
+    option_d: "Winter Palace",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Peter the Great was the Tsar of which country?",
+    option_a: "Russia",
+    option_b: "Sweden",
+    option_c: "Poland",
+    option_d: "Ottoman Empire",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which English king was executed during the English Civil War?",
+    option_a: "Charles I",
+    option_b: "Charles II",
+    option_c: "James I",
+    option_d: "James II",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The Industrial Revolution began in which country?",
+    option_a: "Britain",
+    option_b: "France",
+    option_c: "Germany",
+    option_d: "United States",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Who invented the spinning jenny, a key invention of the Industrial Revolution?",
+    option_a: "James Hargreaves",
+    option_b: "James Watt",
+    option_c: "Richard Arkwright",
+    option_d: "Samuel Crompton",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "James Watt is best known for improving which invention?",
+    option_a: "The steam engine",
+    option_b: "The spinning jenny",
+    option_c: "The power loom",
+    option_d: "The cotton gin",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which industry was the first to be transformed by the Industrial Revolution?",
+    option_a: "Textile industry",
+    option_b: "Steel industry",
+    option_c: "Chemical industry",
+    option_d: "Automobile industry",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The American Declaration of Independence was signed in which year?",
+    option_a: "1776",
+    option_b: "1774",
+    option_c: "1781",
+    option_d: "1789",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Who was the main author of the American Declaration of Independence?",
+    option_a: "Thomas Jefferson",
+    option_b: "George Washington",
+    option_c: "Benjamin Franklin",
+    option_d: "John Adams",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The French Revolution began in which year?",
+    option_a: "1789",
+    option_b: "1776",
+    option_c: "1799",
+    option_d: "1804",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "What prison fortress was stormed on 14 July 1789, marking the start of the French Revolution?",
+    option_a: "The Bastille",
+    option_b: "The Tuileries",
+    option_c: "The Conciergerie",
+    option_d: "The Vincennes",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which slogan best represents the ideals of the French Revolution?",
+    option_a: "Liberty, Equality, Fraternity",
+    option_b: "Peace, Land, Bread",
+    option_c: "Life, Liberty, Property",
+    option_d: "Unity, Justice, Freedom",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The Berlin Conference of 1884-1885 was mainly about the partition of which continent?",
+    option_a: "Africa",
+    option_b: "Asia",
+    option_c: "South America",
+    option_d: "Europe",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which European country colonised the Congo Free State under King Leopold II?",
+    option_a: "Belgium",
+    option_b: "France",
+    option_c: "Portugal",
+    option_d: "Germany",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The Opium Wars were fought between China and which country?",
+    option_a: "Britain",
+    option_b: "France",
+    option_c: "Japan",
+    option_d: "Russia",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "World War I broke out in which year?",
+    option_a: "1914",
+    option_b: "1912",
+    option_c: "1916",
+    option_d: "1918",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "What was the immediate trigger for the outbreak of World War I?",
+    option_a: "Assassination of Archduke Franz Ferdinand",
+    option_b: "Sinking of the Lusitania",
+    option_c: "German invasion of Belgium",
+    option_d: "Russian mobilisation",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The Treaty of Versailles was signed in which year?",
+    option_a: "1919",
+    option_b: "1918",
+    option_c: "1920",
+    option_d: "1921",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Which country was forced to accept the war guilt clause in the Treaty of Versailles?",
+    option_a: "Germany",
+    option_b: "Austria-Hungary",
+    option_c: "Russia",
+    option_d: "Turkey",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "Adolf Hitler became the Chancellor of Germany in which year?",
+    option_a: "1933",
+    option_b: "1929",
+    option_c: "1935",
+    option_d: "1938",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "World War II broke out in Europe in which year?",
+    option_a: "1939",
+    option_b: "1937",
+    option_c: "1940",
+    option_d: "1941",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The United States entered World War II after which event?",
+    option_a: "Japanese attack on Pearl Harbor",
+    option_b: "German invasion of Poland",
+    option_c: "Fall of France",
+    option_d: "Battle of Britain",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The atomic bombs were dropped on which two Japanese cities?",
+    option_a: "Hiroshima and Nagasaki",
+    option_b: "Tokyo and Osaka",
+    option_c: "Kyoto and Kobe",
+    option_d: "Yokohama and Nagoya",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "NATO was formed in which year?",
+    option_a: "1949",
+    option_b: "1945",
+    option_c: "1955",
+    option_d: "1961",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "easy",
+    question: "The Truman Doctrine was aimed at containing the spread of which ideology?",
+    option_a: "Communism",
+    option_b: "Fascism",
+    option_c: "Capitalism",
+    option_d: "Imperialism",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which Renaissance artist painted the ceiling of the Sistine Chapel?",
+    option_a: "Michelangelo",
+    option_b: "Raphael",
+    option_c: "Leonardo da Vinci",
+    option_d: "Donatello",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "What was the main purpose of the Council of Trent (1545-1563)?",
+    option_a: "To reform the Catholic Church and counter the Reformation",
+    option_b: "To plan a crusade against the Ottoman Empire",
+    option_c: "To elect a new Pope",
+    option_d: "To negotiate peace with Protestant rulers",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which treaty ended the Thirty Years War in 1648?",
+    option_a: "Peace of Westphalia",
+    option_b: "Treaty of Utrecht",
+    option_c: "Treaty of Tordesillas",
+    option_d: "Treaty of Vienna",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "What was the main cause of the English Civil War?",
+    option_a: "Conflict between the King and Parliament over power and taxation",
+    option_b: "Religious persecution of Catholics",
+    option_c: "French invasion of England",
+    option_d: "Economic depression caused by the Black Death",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Who ruled England as Lord Protector after the execution of Charles I?",
+    option_a: "Oliver Cromwell",
+    option_b: "Thomas Fairfax",
+    option_c: "William Laud",
+    option_d: "Thomas Wentworth",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Glorious Revolution of 1688 resulted in the overthrow of which English king?",
+    option_a: "James II",
+    option_b: "Charles II",
+    option_c: "Charles I",
+    option_d: "James I",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which document limited the powers of the English monarch after the Glorious Revolution?",
+    option_a: "Bill of Rights 1689",
+    option_b: "Magna Carta",
+    option_c: "Petition of Right",
+    option_d: "Habeas Corpus Act",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which of the following was a major social effect of the Industrial Revolution?",
+    option_a: "Growth of the urban working class",
+    option_b: "Decline of factory system",
+    option_c: "Decrease in population",
+    option_d: "Reduction in child labour",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Luddites were groups of workers who:",
+    option_a: "Destroyed machinery that they believed threatened their jobs",
+    option_b: "Supported the factory owners",
+    option_c: "Advocated for colonial expansion",
+    option_d: "Promoted free trade policies",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which of the following was a key factor enabling the Industrial Revolution in Britain?",
+    option_a: "Abundant coal and iron ore deposits",
+    option_b: "Lack of a navy",
+    option_c: "Political instability",
+    option_d: "Absence of overseas colonies",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "What was the main cause of the American Revolution?",
+    option_a: "Taxation without representation by the British Parliament",
+    option_b: "Religious persecution of colonists",
+    option_c: "French interference in colonial affairs",
+    option_d: "British support for slavery",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which event is known as the Reign of Terror during the French Revolution?",
+    option_a: "Mass executions led by Robespierre and the Committee of Public Safety",
+    option_b: "The storming of the Bastille",
+    option_c: "The execution of Louis XVI",
+    option_d: "Napoleons rise to power",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Who was the leader of France who crowned himself Emperor in 1804?",
+    option_a: "Napoleon Bonaparte",
+    option_b: "Louis XVIII",
+    option_c: "Robespierre",
+    option_d: "Louis Philippe",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Congress of Vienna (1814-1815) aimed to achieve which of the following?",
+    option_a: "Restore the balance of power and monarchies in Europe after Napoleon",
+    option_b: "Create a united German state",
+    option_c: "Grant independence to all European colonies",
+    option_d: "Establish democratic governments across Europe",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which of the following was a MAIN cause of European imperialism in the 19th century?",
+    option_a: "Need for raw materials and markets for industrial goods",
+    option_b: "Desire to spread democracy",
+    option_c: "Overpopulation in Europe",
+    option_d: "Religious unity in Europe",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Opium Wars resulted in:",
+    option_a: "China being forced to sign unequal treaties and open treaty ports",
+    option_b: "China becoming a British colony",
+    option_c: "China modernising its military",
+    option_d: "China gaining control of Hong Kong permanently",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Scramble for Africa refers to:",
+    option_a: "The rapid colonisation of Africa by European powers in the late 19th century",
+    option_b: "African nations colonising Europe",
+    option_c: "The independence movement in Africa",
+    option_d: "The slave trade in Africa",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which country colonised India before its independence in 1947?",
+    option_a: "Britain",
+    option_b: "France",
+    option_c: "Portugal",
+    option_d: "Netherlands",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which of the following was a long-term cause of World War I?",
+    option_a: "Alliance system dividing Europe into opposing camps",
+    option_b: "The Russian Revolution",
+    option_c: "The Great Depression",
+    option_d: "The rise of fascism",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which two main alliances faced each other at the start of World War I?",
+    option_a: "Triple Entente and Triple Alliance",
+    option_b: "NATO and Warsaw Pact",
+    option_c: "Axis and Allies",
+    option_d: "Central Powers and League of Nations",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "What was a key military term of the Treaty of Versailles regarding Germany?",
+    option_a: "Germanys army was limited to 100,000 men",
+    option_b: "Germany was allowed to keep its air force",
+    option_c: "Germany could maintain a large navy",
+    option_d: "Germany was allowed to develop nuclear weapons",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Which country withdrew from World War I in 1917 due to revolution?",
+    option_a: "Russia",
+    option_b: "Italy",
+    option_c: "France",
+    option_d: "Britain",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The policy of appeasement is most associated with which British Prime Minister?",
+    option_a: "Neville Chamberlain",
+    option_b: "Winston Churchill",
+    option_c: "Stanley Baldwin",
+    option_d: "Clement Attlee",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Munich Agreement of 1938 allowed Germany to annex which region?",
+    option_a: "Sudetenland",
+    option_b: "Poland",
+    option_c: "Austria",
+    option_d: "Alsace-Lorraine",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Operation Barbarossa was the code name for which military campaign?",
+    option_a: "German invasion of the Soviet Union",
+    option_b: "Allied invasion of Normandy",
+    option_c: "German invasion of France",
+    option_d: "Japanese attack on Pearl Harbor",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "D-Day (6 June 1944) refers to the Allied invasion of which region?",
+    option_a: "Normandy, France",
+    option_b: "Sicily, Italy",
+    option_c: "Iwo Jima, Japan",
+    option_d: "Stalingrad, Soviet Union",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Marshall Plan was aimed at:",
+    option_a: "Providing economic aid to rebuild Western Europe after WWII",
+    option_b: "Military defence of Western Europe",
+    option_c: "Rebuilding Japan after WWII",
+    option_d: "Containing communism in Asia",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Berlin Blockade (1948-1949) was resolved by:",
+    option_a: "The Berlin Airlift by the Western Allies",
+    option_b: "A Soviet military invasion of West Berlin",
+    option_c: "The signing of the Warsaw Pact",
+    option_d: "The construction of the Berlin Wall",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Cuban Missile Crisis (1962) was resolved when the Soviet Union agreed to:",
+    option_a: "Remove missiles from Cuba in exchange for US removal of missiles from Turkey",
+    option_b: "Invade West Berlin",
+    option_c: "Launch a nuclear attack on the United States",
+    option_d: "Withdraw from the Warsaw Pact",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Vietnam War ended in 1975 with the fall of which city?",
+    option_a: "Saigon",
+    option_b: "Hanoi",
+    option_c: "Hue",
+    option_d: "Da Nang",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "The Korean War took place between which years?",
+    option_a: "1950-1953",
+    option_b: "1945-1948",
+    option_c: "1955-1958",
+    option_d: "1960-1963",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "India gained independence from Britain in which year?",
+    option_a: "1947",
+    option_b: "1945",
+    option_c: "1948",
+    option_d: "1950",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Who was the leader of the Indian independence movement known for non-violent civil disobedience?",
+    option_a: "Mahatma Gandhi",
+    option_b: "Jawaharlal Nehru",
+    option_c: "Muhammad Ali Jinnah",
+    option_d: "Subhas Chandra Bose",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Kwame Nkrumah was the first president of which independent African country?",
+    option_a: "Ghana",
+    option_b: "Nigeria",
+    option_c: "Kenya",
+    option_d: "Tanzania",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "medium",
+    question: "Hong Kong became a British colony after which war?",
+    option_a: "The First Opium War",
+    option_b: "The Second Opium War",
+    option_c: "The Sino-Japanese War",
+    option_d: "The Boxer Rebellion",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the concept of divine right of kings?",
+    option_a: "The belief that a monarchs authority comes directly from God and is not subject to earthly authority",
+    option_b: "The belief that kings should be elected by the people",
+    option_c: "The idea that the Pope has authority over all kings",
+    option_d: "The principle that kings must obey the law of Parliament",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "What was the significance of the Edict of Nantes (1598)?",
+    option_a: "It granted religious freedom to French Huguenots",
+    option_b: "It ended the Thirty Years War",
+    option_c: "It established Catholicism as the state religion of France",
+    option_d: "It declared war on Spain",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Commercial Revolution that followed the Age of Exploration included:",
+    option_a: "The rise of joint-stock companies and banking systems",
+    option_b: "The invention of the steam engine",
+    option_c: "The abolition of slavery",
+    option_d: "The establishment of the United Nations",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the policy of mercantilism?",
+    option_a: "An economic policy that a nations wealth depends on accumulating gold and silver through favourable trade",
+    option_b: "A policy of free trade without tariffs",
+    option_c: "An economic system based on communist principles",
+    option_d: "A policy of isolationism and self-sufficiency",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "What was the main significance of the English Bill of Rights (1689)?",
+    option_a: "It established the supremacy of Parliament over the monarchy",
+    option_b: "It granted independence to the American colonies",
+    option_c: "It abolished the monarchy in England",
+    option_d: "It established universal suffrage",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Peter the Great founded which city as Russias window to the West?",
+    option_a: "St. Petersburg",
+    option_b: "Moscow",
+    option_c: "Kiev",
+    option_d: "Novgorod",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The enclosure movement in Britain contributed to the Industrial Revolution by:",
+    option_a: "Forcing small farmers off the land to become factory workers",
+    option_b: "Distributing land equally among peasants",
+    option_c: "Encouraging agricultural self-sufficiency",
+    option_d: "Promoting international trade in grain",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following was a key difference between the American and French Revolutions?",
+    option_a: "The American Revolution was primarily about independence from colonial rule, while the French Revolution was about overthrowing the existing social order",
+    option_b: "The American Revolution was violent, while the French Revolution was peaceful",
+    option_c: "The American Revolution established a monarchy, while the French Revolution established a republic",
+    option_d: "The American Revolution was inspired by socialism, while the French Revolution was inspired by capitalism",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Napoleonic Code (1804) was significant because it:",
+    option_a: "Established a uniform legal system and protected property rights",
+    option_b: "Restored the feudal system in France",
+    option_c: "Granted universal suffrage to all citizens",
+    option_d: "Abolished all private property",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best explains why the Industrial Revolution began in Britain?",
+    option_a: "Abundant coal and iron, capital from trade, stable government, and colonies for raw materials",
+    option_b: "Lack of natural resources forced innovation",
+    option_c: "Strong influence of socialist ideas",
+    option_d: "Isolation from European conflicts",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following was a key provision of the Treaty of Versailles that contributed to future conflict?",
+    option_a: "The war guilt clause forcing Germany to accept full responsibility for the war",
+    option_b: "The creation of the United Nations",
+    option_c: "The granting of independence to German colonies",
+    option_d: "The establishment of free trade in Europe",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Schlieffen Plan was Germanys strategy to:",
+    option_a: "Avoid a two-front war by quickly defeating France before turning to Russia",
+    option_b: "Defend Germany from a British naval blockade",
+    option_c: "Invade Britain across the English Channel",
+    option_d: "Form an alliance with the United States",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best explains the failure of the League of Nations?",
+    option_a: "The absence of the United States and lack of military power to enforce decisions",
+    option_b: "It had too many member states",
+    option_c: "It focused only on economic issues",
+    option_d: "It was dominated by the Soviet Union",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best explains the rise of fascism in Italy under Mussolini?",
+    option_a: "Economic instability, fear of communism, and nationalist resentment after WWI",
+    option_b: "Strong democratic traditions and economic prosperity",
+    option_c: "Support from the League of Nations",
+    option_d: "The success of the Russian Revolution in Italy",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Yalta Conference (1945) was significant because:",
+    option_a: "The Allied leaders discussed the post-war division of Europe",
+    option_b: "Germany surrendered unconditionally",
+    option_c: "The United Nations was founded",
+    option_d: "The atomic bomb was dropped on Japan",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the Iron Curtain?",
+    option_a: "The ideological and physical boundary dividing Europe into Western and Soviet spheres of influence",
+    option_b: "A military alliance between the US and Britain",
+    option_c: "The border between North and South Korea",
+    option_d: "The wall separating East and West Berlin",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the policy of containment during the Cold War?",
+    option_a: "Preventing the spread of communism beyond its existing borders",
+    option_b: "Launching a direct military attack on the Soviet Union",
+    option_c: "Providing economic aid to all countries regardless of ideology",
+    option_d: "Isolating the United States from world affairs",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Domino Theory, used to justify US involvement in Vietnam, suggested that:",
+    option_a: "If one country fell to communism, neighbouring countries would follow",
+    option_b: "Nuclear war was inevitable between the US and USSR",
+    option_c: "Colonialism would spread throughout Asia",
+    option_d: "Economic sanctions would defeat communist regimes",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Non-Aligned Movement during the Cold War was led by leaders such as:",
+    option_a: "Jawaharlal Nehru, Gamal Abdel Nasser, and Josip Broz Tito",
+    option_b: "Winston Churchill, Harry Truman, and Joseph Stalin",
+    option_c: "Charles de Gaulle, Konrad Adenauer, and Mao Zedong",
+    option_d: "Fidel Castro, Che Guevara, and Ho Chi Minh",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the policy of detente during the Cold War?",
+    option_a: "A relaxation of tensions between the US and Soviet Union in the 1970s",
+    option_b: "An escalation of the arms race in the 1980s",
+    option_c: "The policy of containing communism in Asia",
+    option_d: "The economic recovery of Western Europe after WWII",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The fall of the Berlin Wall in 1989 symbolised:",
+    option_a: "The end of the Cold War and the collapse of communist regimes in Eastern Europe",
+    option_b: "The beginning of World War III",
+    option_c: "The reunification of Korea",
+    option_d: "The start of the European Union",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following was a key factor in the decolonisation of Africa after WWII?",
+    option_a: "Weakened European powers and rise of African nationalism",
+    option_b: "Direct military intervention by the Soviet Union",
+    option_c: "Economic prosperity in European colonial powers",
+    option_d: "The establishment of NATO",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Suez Crisis of 1956 demonstrated that:",
+    option_a: "European colonial powers could no longer act independently of US and Soviet approval",
+    option_b: "Britain and France remained dominant world powers",
+    option_c: "The United Nations was ineffective",
+    option_d: "Egypt had become a communist state",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The European Union was formally established by which treaty?",
+    option_a: "Maastricht Treaty (1992)",
+    option_b: "Treaty of Rome (1957)",
+    option_c: "Treaty of Paris (1951)",
+    option_d: "Treaty of Lisbon (2007)",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the concept of globalisation?",
+    option_a: "The increasing interconnectedness of economies, cultures, and societies worldwide",
+    option_b: "The dominance of one country over all others",
+    option_c: "The elimination of all national borders",
+    option_d: "The return to traditional agricultural economies",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following best describes the post-Cold War world order?",
+    option_a: "A unipolar world dominated by the United States with emerging multipolar trends",
+    option_b: "A return to the colonial system",
+    option_c: "A world without any military conflicts",
+    option_d: "A bipolar world divided between China and India",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "Which of the following was a major challenge facing Hong Kong after the 1997 handover?",
+    option_a: "Maintaining its economic prosperity and way of life under Chinese sovereignty",
+    option_b: "Defending against foreign invasion",
+    option_c: "Establishing a new currency",
+    option_d: "Gaining membership in the United Nations",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The one-child policy in China (1979-2015) was significant in Hong Kong because:",
+    option_a: "It did not apply to Hong Kong, which maintained a separate legal system",
+    option_b: "It was strictly enforced in Hong Kong",
+    option_c: "It led to Hong Kongs independence movement",
+    option_d: "It caused a massive influx of refugees to Hong Kong",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Tiananmen Square Incident of 1989 had a significant impact on Hong Kong because:",
+    option_a: "It heightened concerns about Hong Kongs future under Chinese rule after 1997",
+    option_b: "It led to the immediate handover of Hong Kong",
+    option_c: "It caused Britain to cancel the Sino-British Joint Declaration",
+    option_d: "It resulted in Hong Kong gaining independence",
+    correct_answer: "A"
+  },
+  {
+    category: "History",
+    difficulty: "hard",
+    question: "The Hong Kong Basic Law serves as:",
+    option_a: "The constitutional document of the Hong Kong Special Administrative Region",
+    option_b: "A trade agreement between Hong Kong and China",
+    option_c: "A military alliance between Hong Kong and Britain",
+    option_d: "A declaration of independence for Hong Kong",
+    correct_answer: "A"
+  }
+]

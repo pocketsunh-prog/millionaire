@@ -74,4 +74,13 @@ INSERT IGNORE INTO categories (name, description) VALUES
 ('Sports', 'Various sports, athletes, and sporting events'),
 ('Technology', 'Computers, internet, inventions, and tech'),
 ('Literature', 'Books, authors, and literary works'),
-('General Knowledge', 'Miscellaneous facts and trivia');
+('General Knowledge', 'Miscellaneous facts and trivia'),
+('Chinese', 'HK DSE Chinese language, literature, and culture'),
+('English', 'HK DSE English language, grammar, and comprehension'),
+('Maths', 'HK DSE Mathematics, algebra, geometry, calculus, and statistics'),
+('Physics', 'HK DSE Physics, mechanics, waves, electricity, and nuclear'),
+('Chemistry', 'HK DSE Chemistry, bonding, acids, organic, and electrochemistry'),
+('Biology', 'HK DSE Biology, cell, genetics, ecology, and human physiology'),
+('IS', 'HK DSE ICT, programming, networks, database, and digital literacy'),
+('Chin History', 'HK DSE Chinese History from ancient to modern China'),
+('History', 'HK DSE World History from Renaissance to modern era');
