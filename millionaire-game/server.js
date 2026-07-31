@@ -3,6 +3,8 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const multer = require('multer');
+const XLSX = require('xlsx');
 require('dotenv').config();
 
 const app = express();
@@ -709,6 +711,261 @@ app.get('/api/admin/stats', async (req, res) => {
       total_games: gameStats.total_games,
       total_wins: gameStats.total_wins,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ ADMIN: QUESTION IMPORT ============
+
+// Configure multer for in-memory file upload (max 10MB)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+    ].includes(file.mimetype) || file.originalname.match(/\.(xlsx|xls|csv)$/i);
+    cb(null, !!ok);
+  },
+});
+
+// GET /api/admin/questions/template — serve a blank Excel template for import
+app.get('/api/admin/questions/template', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const sampleData = [
+      {
+        question: 'What is the capital of France?',
+        option_a: 'London',
+        option_b: 'Paris',
+        option_c: 'Berlin',
+        option_d: 'Madrid',
+        correct_answer: 'B',
+        difficulty: 'easy',
+      },
+      {
+        question: 'Which planet is known as the Red Planet?',
+        option_a: 'Venus',
+        option_b: 'Jupiter',
+        option_c: 'Mars',
+        option_d: 'Saturn',
+        correct_answer: 'C',
+        difficulty: 'easy',
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+
+    // Set column widths for readability
+    ws['!cols'] = [
+      { wch: 50 }, // question
+      { wch: 25 }, // option_a
+      { wch: 25 }, // option_b
+      { wch: 25 }, // option_c
+      { wch: 25 }, // option_d
+      { wch: 15 }, // correct_answer
+      { wch: 12 }, // difficulty
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Questions');
+
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="question_import_template.xlsx"');
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/questions/import — upload Excel and import questions
+app.post('/api/admin/questions/import', upload.single('file'), async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const categoryId = parseInt(req.body.categoryId);
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Category ID is required' });
+    }
+
+    // Verify category exists
+    const [catCheck] = await pool.execute('SELECT id, name FROM categories WHERE id = ?', [categoryId]);
+    if (catCheck.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    const categoryName = catCheck[0].name;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Parse the Excel file
+    let workbook;
+    try {
+      workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    } catch (parseErr) {
+      return res.status(400).json({ error: 'Failed to parse Excel file: ' + parseErr.message });
+    }
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'The spreadsheet is empty (no data rows found)' });
+    }
+
+    // Validate required columns from the first row
+    const firstRow = rows[0];
+    const requiredCols = ['question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'];
+    const missingCols = requiredCols.filter(col => !(col in firstRow));
+    if (missingCols.length > 0) {
+      return res.status(400).json({
+        error: `Missing required columns: ${missingCols.join(', ')}. Please use the template.`,
+      });
+    }
+
+    // Validate and collect questions
+    const validQuestions = [];
+    const errors = [];
+
+    rows.forEach((row, idx) => {
+      const rowNum = idx + 2; // +2 because row 1 is header, 0-indexed
+
+      const question = String(row.question || '').trim();
+      const optionA = String(row.option_a || '').trim();
+      const optionB = String(row.option_b || '').trim();
+      const optionC = String(row.option_c || '').trim();
+      const optionD = String(row.option_d || '').trim();
+      const correctAnswer = String(row.correct_answer || '').trim().toUpperCase();
+      const difficulty = String(row.difficulty || 'medium').trim().toLowerCase();
+
+      const rowErrors = [];
+
+      if (!question) rowErrors.push('missing question');
+      if (!optionA) rowErrors.push('missing option_a');
+      if (!optionB) rowErrors.push('missing option_b');
+      if (!optionC) rowErrors.push('missing option_c');
+      if (!optionD) rowErrors.push('missing option_d');
+      if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) rowErrors.push(`invalid correct_answer "${row.correct_answer}" (must be A, B, C, or D)`);
+      if (!['easy', 'medium', 'hard'].includes(difficulty)) rowErrors.push(`invalid difficulty "${row.difficulty}" (must be easy, medium, or hard)`);
+
+      if (rowErrors.length > 0) {
+        errors.push({ row: rowNum, errors: rowErrors });
+      } else {
+        validQuestions.push({
+          question,
+          option_a: optionA,
+          option_b: optionB,
+          option_c: optionC,
+          option_d: optionD,
+          correct_answer: correctAnswer,
+          difficulty,
+        });
+      }
+    });
+
+    if (validQuestions.length === 0) {
+      return res.status(400).json({
+        error: 'No valid questions found in the file',
+        validationErrors: errors,
+      });
+    }
+
+    // Insert valid questions
+    let insertedCount = 0;
+    const insertErrors = [];
+
+    for (const q of validQuestions) {
+      try {
+        await pool.execute(
+          `INSERT INTO questions (category_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [categoryId, q.question, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer, q.difficulty]
+        );
+        insertedCount++;
+      } catch (insertErr) {
+        insertErrors.push({ question: q.question.substring(0, 50), error: insertErr.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      category: categoryName,
+      totalRows: rows.length,
+      inserted: insertedCount,
+      skipped: errors.length,
+      insertErrors,
+      validationErrors: errors,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/questions — list questions (paginated, filterable)
+app.get('/api/admin/questions', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { categoryId, page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let whereClause = '';
+    const params = [];
+
+    if (categoryId) {
+      whereClause = 'WHERE q.category_id = ?';
+      params.push(parseInt(categoryId));
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT q.id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
+              q.correct_answer, q.difficulty, q.category_id, c.name as category_name
+       FROM questions q
+       JOIN categories c ON q.category_id = c.id
+       ${whereClause}
+       ORDER BY q.id DESC
+       LIMIT ? OFFSET ?`,
+      [...params, parseInt(limit), offset]
+    );
+
+    // Get total count
+    const [countResult] = await pool.execute(
+      `SELECT COUNT(*) as total FROM questions q ${whereClause}`,
+      params
+    );
+
+    res.json({
+      questions: rows,
+      total: countResult[0].total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/questions/:id — delete a single question
+app.delete('/api/admin/questions/:id', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const qId = parseInt(req.params.id);
+    const [result] = await pool.execute('DELETE FROM questions WHERE id = ?', [qId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    res.json({ success: true, deletedId: qId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

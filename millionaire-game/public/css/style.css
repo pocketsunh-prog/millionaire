@@ -1292,6 +1292,230 @@ body {
   width: auto;
 }
 
+/* ---- Import Questions Panel ---- */
+#import-panel {
+  min-height: 400px;
+}
+
+.import-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.import-step {
+  background: rgba(26, 26, 94, 0.4);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.import-step h3 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.import-instructions ol {
+  margin: 0 0 16px 20px;
+  color: #ccc;
+  line-height: 1.8;
+}
+
+.import-instructions li {
+  margin: 4px 0;
+}
+
+.import-instructions code {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.8rem;
+  color: #ffd700;
+}
+
+#import-panel .input-group {
+  margin: 0;
+}
+
+#import-panel .input-group label {
+  display: block;
+  color: #aaa;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+#import-panel .input-group select,
+#import-panel .input-group input[type="file"] {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(10, 10, 46, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#import-panel .input-group select:focus,
+#import-panel .input-group input[type="file"]:focus {
+  border-color: #ffd700;
+}
+
+#import-panel .input-group input[type="file"] {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+#import-panel .input-group input[type="file"]::file-selector-button {
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: #ffd700;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+#import-panel .input-group input[type="file"]::file-selector-button:hover {
+  background: rgba(255, 215, 0, 0.25);
+}
+
+.import-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.import-file-name {
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+/* Import Results */
+.import-results {
+  background: rgba(26, 26, 94, 0.4);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.import-results h3 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.import-results.hidden {
+  display: none;
+}
+
+.import-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.import-summary-item {
+  background: rgba(10, 10, 46, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.import-summary-item.success {
+  border-color: rgba(0, 255, 0, 0.3);
+}
+
+.import-summary-item.warning {
+  border-color: rgba(255, 170, 0, 0.3);
+}
+
+.import-summary-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.import-summary-item.success .import-summary-value {
+  color: #00ff00;
+}
+
+.import-summary-item.warning .import-summary-value {
+  color: #ffaa00;
+}
+
+.import-summary-label {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.import-success-msg {
+  color: #00ff00;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.import-error-text {
+  color: #ff4444;
+}
+
+.import-results-errors {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.import-results-errors.hidden {
+  display: none;
+}
+
+.import-results-errors h4 {
+  color: #ffaa00;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.import-errors-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.import-error-item {
+  background: rgba(255, 0, 0, 0.08);
+  border: 1px solid rgba(255, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: #cc9999;
+}
+
+.import-error-item strong {
+  color: #ff9999;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .game-title { font-size: 2rem; }
@@ -1304,4 +1528,6 @@ body {
   .admin-table { font-size: 0.75rem; }
   .admin-table th, .admin-table td { padding: 8px 6px; }
   .modal-content { padding: 20px; }
+  .import-form-row { grid-template-columns: 1fr; }
+  .import-summary-grid { grid-template-columns: repeat(2, 1fr); }
 }

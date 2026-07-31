@@ -316,6 +316,7 @@
           <div id="admin-tabs">
             <button class="admin-tab active" data-tab="users">👥 Users</button>
             <button class="admin-tab" data-tab="categories">📁 Categories</button>
+            <button class="admin-tab" data-tab="import">📥 Import Questions</button>
           </div>
 
           <!-- Users Panel -->
@@ -358,6 +359,60 @@
                 </thead>
                 <tbody id="categories-tbody"></tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Import Questions Panel -->
+          <div id="import-panel" class="admin-panel hidden">
+            <div class="import-container">
+              <!-- Step 1: Instructions & Template -->
+              <div class="import-step">
+                <div class="import-instructions">
+                  <h3>📋 How to Import Questions</h3>
+                  <ol>
+                    <li><strong>Download the template</strong> — it has the correct column headers and sample rows.</li>
+                    <li><strong>Fill in your questions</strong> — one row per question. Required columns: <code>question</code>, <code>option_a</code>, <code>option_b</code>, <code>option_c</code>, <code>option_d</code>, <code>correct_answer</code> (A/B/C/D). Optional: <code>difficulty</code> (easy/medium/hard, defaults to medium).</li>
+                    <li><strong>Select a category</strong> from the dropdown below.</li>
+                    <li><strong>Upload your file</strong> (.xlsx, .xls, or .csv) and click Import.</li>
+                  </ol>
+                  <button id="btn-download-template" class="menu-btn small-btn">📥 Download Template</button>
+                </div>
+              </div>
+
+              <!-- Step 2: Category Selection & Upload -->
+              <div class="import-step">
+                <div class="import-form-row">
+                  <div class="input-group">
+                    <label for="import-category">Category *</label>
+                    <select id="import-category" required>
+                      <option value="">— Select Category —</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label for="import-file">Excel File *</label>
+                    <input type="file" id="import-file" accept=".xlsx,.xls,.csv">
+                    <span class="input-hint">Accepted: .xlsx, .xls, .csv (max 10MB)</span>
+                  </div>
+                </div>
+                <div class="import-actions">
+                  <button id="btn-import-submit" class="menu-btn small-btn" disabled>📤 Import Questions</button>
+                  <span id="import-file-name" class="import-file-name"></span>
+                </div>
+              </div>
+
+              <!-- Step 3: Results -->
+              <div id="import-results" class="import-results hidden">
+                <h3>📊 Import Results</h3>
+                <div id="import-results-summary" class="import-results-summary"></div>
+                <div id="import-results-errors" class="import-results-errors hidden">
+                  <h4>⚠️ Validation Errors</h4>
+                  <div id="import-errors-list" class="import-errors-list"></div>
+                </div>
+                <div id="import-results-insert-errors" class="import-results-errors hidden">
+                  <h4>❌ Insert Errors</h4>
+                  <div id="insert-errors-list" class="import-errors-list"></div>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -61,6 +61,7 @@ class AdminManager {
     this.setupTabs();
     this.setupUserModal();
     this.setupCategoryModal();
+    this.setupImportPanel();
     await this.loadStats();
     await this.loadUsers();
     await this.loadCategories();
@@ -74,6 +75,7 @@ class AdminManager {
         this.currentTab = tab.dataset.tab;
         document.getElementById('users-panel').classList.toggle('hidden', this.currentTab !== 'users');
         document.getElementById('categories-panel').classList.toggle('hidden', this.currentTab !== 'categories');
+        document.getElementById('import-panel').classList.toggle('hidden', this.currentTab !== 'import');
       });
     });
   }
@@ -273,6 +275,7 @@ class AdminManager {
     try {
       this.categories = await this.apiRequest('/api/admin/categories');
       this.renderCategories();
+      this.populateImportCategories();
     } catch (err) {
       tbody.innerHTML = `<tr><td colspan="4" class="loading-cell error">Failed to load categories: ${err.message}</td></tr>`;
     }
@@ -403,6 +406,210 @@ class AdminManager {
       await this.loadStats();
     } catch (err) {
       this.showAdminMessage(err.message, 'error');
+    }
+  }
+
+  // ---- Import Questions ----
+
+  setupImportPanel() {
+    // Category dropdown change
+    document.getElementById('import-category').addEventListener('change', () => this.updateImportButton());
+
+    // File input change
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const fileNameDisplay = document.getElementById('import-file-name');
+      if (file) {
+        fileNameDisplay.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      } else {
+        fileNameDisplay.textContent = '';
+      }
+      this.updateImportButton();
+    });
+
+    // Submit import
+    document.getElementById('btn-import-submit').addEventListener('click', () => this.submitImport());
+
+    // Download template (must use fetch to include auth header)
+    document.getElementById('btn-download-template').addEventListener('click', () => this.downloadTemplate());
+  }
+
+  async downloadTemplate() {
+    try {
+      const headers = {};
+      if (window.authManager.token) {
+        headers['Authorization'] = `Bearer ${window.authManager.token}`;
+      }
+
+      const res = await fetch('/api/admin/questions/template', { headers });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Download failed');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'question_import_template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      this.showAdminMessage(err.message, 'error');
+    }
+  }
+
+  updateImportButton() {
+    const categorySelect = document.getElementById('import-category');
+    const fileInput = document.getElementById('import-file');
+    const submitBtn = document.getElementById('btn-import-submit');
+
+    const hasCategory = categorySelect.value !== '';
+    const hasFile = fileInput.files.length > 0;
+    submitBtn.disabled = !(hasCategory && hasFile);
+  }
+
+  populateImportCategories() {
+    const select = document.getElementById('import-category');
+    // Keep the first placeholder option, remove the rest
+    select.innerHTML = '<option value="">— Select Category —</option>';
+
+    this.categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${c.name} (${c.question_count} questions)`;
+      select.appendChild(opt);
+    });
+  }
+
+  async submitImport() {
+    const categorySelect = document.getElementById('import-category');
+    const fileInput = document.getElementById('import-file');
+    const submitBtn = document.getElementById('btn-import-submit');
+    const resultsDiv = document.getElementById('import-results');
+
+    const categoryId = categorySelect.value;
+    const file = fileInput.files[0];
+
+    if (!categoryId || !file) return;
+
+    // Hide previous results
+    resultsDiv.classList.add('hidden');
+
+    // Disable button during upload
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Importing...';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('categoryId', categoryId);
+
+      const headers = {};
+      if (window.authManager.token) {
+        headers['Authorization'] = `Bearer ${window.authManager.token}`;
+      }
+
+      const res = await fetch('/api/admin/questions/import', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Import failed');
+      }
+
+      this.showImportResults(data);
+      this.showAdminMessage(
+        `Successfully imported ${data.inserted} question(s) to "${data.category}"`,
+        'success'
+      );
+
+      // Refresh stats and categories (question counts changed)
+      await this.loadStats();
+      await this.loadCategories();
+      this.populateImportCategories();
+
+      // Reset form
+      fileInput.value = '';
+      document.getElementById('import-file-name').textContent = '';
+      this.updateImportButton();
+    } catch (err) {
+      this.showAdminMessage(err.message, 'error');
+      // Show error in results area
+      resultsDiv.classList.remove('hidden');
+      document.getElementById('import-results-summary').innerHTML =
+        `<span class="import-error-text">❌ ${this.escapeHtml(err.message)}</span>`;
+      document.getElementById('import-results-errors').classList.add('hidden');
+      document.getElementById('import-results-insert-errors').classList.add('hidden');
+    } finally {
+      submitBtn.textContent = '📤 Import Questions';
+      this.updateImportButton();
+    }
+  }
+
+  showImportResults(data) {
+    const resultsDiv = document.getElementById('import-results');
+    const summaryDiv = document.getElementById('import-results-summary');
+    const validationErrorsDiv = document.getElementById('import-results-errors');
+    const validationList = document.getElementById('import-errors-list');
+    const insertErrorsDiv = document.getElementById('import-results-insert-errors');
+    const insertList = document.getElementById('insert-errors-list');
+
+    resultsDiv.classList.remove('hidden');
+
+    // Summary
+    const allSuccess = data.skipped === 0 && data.insertErrors.length === 0;
+    summaryDiv.innerHTML = `
+      <div class="import-summary-grid">
+        <div class="import-summary-item success">
+          <span class="import-summary-value">${data.inserted}</span>
+          <span class="import-summary-label">Imported</span>
+        </div>
+        <div class="import-summary-item ${data.skipped > 0 ? 'warning' : 'success'}">
+          <span class="import-summary-value">${data.skipped}</span>
+          <span class="import-summary-label">Skipped</span>
+        </div>
+        <div class="import-summary-item">
+          <span class="import-summary-value">${data.totalRows}</span>
+          <span class="import-summary-label">Total Rows</span>
+        </div>
+        <div class="import-summary-item">
+          <span class="import-summary-value">${this.escapeHtml(data.category)}</span>
+          <span class="import-summary-label">Category</span>
+        </div>
+      </div>
+      ${allSuccess ? '<p class="import-success-msg">✅ All questions imported successfully!</p>' : ''}
+    `;
+
+    // Validation errors
+    if (data.validationErrors && data.validationErrors.length > 0) {
+      validationErrorsDiv.classList.remove('hidden');
+      validationList.innerHTML = data.validationErrors.map(e =>
+        `<div class="import-error-item">
+          <strong>Row ${e.row}:</strong> ${this.escapeHtml(e.errors.join(', '))}
+        </div>`
+      ).join('');
+    } else {
+      validationErrorsDiv.classList.add('hidden');
+    }
+
+    // Insert errors
+    if (data.insertErrors && data.insertErrors.length > 0) {
+      insertErrorsDiv.classList.remove('hidden');
+      insertList.innerHTML = data.insertErrors.map(e =>
+        `<div class="import-error-item">
+          <strong>"${this.escapeHtml(e.question)}...":</strong> ${this.escapeHtml(e.error)}
+        </div>`
+      ).join('');
+    } else {
+      insertErrorsDiv.classList.add('hidden');
     }
   }
 
