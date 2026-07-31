@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100),
     password_hash VARCHAR(255) NOT NULL,
     avatar VARCHAR(10) DEFAULT '🎮',
+    role ENUM('user', 'admin') DEFAULT 'user',
     total_games INT DEFAULT 0,
     total_wins INT DEFAULT 0,
     best_score INT DEFAULT 0,
@@ -37,7 +38,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
     INDEX idx_username (username),
-    INDEX idx_best_score (best_score DESC)
+    INDEX idx_best_score (best_score DESC),
+    INDEX idx_role (role)
 );
 
 CREATE TABLE IF NOT EXISTS game_sessions (

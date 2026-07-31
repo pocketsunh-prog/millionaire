@@ -14,6 +14,7 @@ A fully-featured "Who Wants to Be a Millionaire" trivia game built with Node.js,
 - **Profile** - Personal stats, game history, win rate
 - **Sound Effects** - Synthesized audio via Web Audio API (no external files)
 - **Responsive Design** - Works on desktop and mobile
+- **Admin Panel** - User management and category management for administrators
 
 ## Prerequisites
 
@@ -55,23 +56,47 @@ Open your browser at: **http://localhost:8080**
 ```
 millionaire-game/
 ├── docker-compose.yml      # MySQL Docker configuration
-├── server.js               # Express API server (with auth)
+├── server.js               # Express API server (with auth + admin routes)
 ├── package.json
 ├── .env                    # Database configuration
 ├── db/
 │   ├── schema.sql          # DB schema (users, questions, sessions)
-│   └── seed.js             # 100 trivia questions seeder
+│   ├── seed.js             # 100 trivia questions seeder
+│   ├── migrate_add_role.sql    # Migration: add role column to users
+│   └── promote_admin.js    # CLI: promote a user to admin
 └── public/
-    ├── index.html          # Game UI
+    ├── index.html          # Game UI (+ admin panel)
     ├── css/
-    │   └── style.css       # Game styling
+    │   └── style.css       # Game styling (+ admin styles)
     └── js/
         ├── game.js         # Three.js 3D scene + game logic
         ├── audio.js        # Web Audio API sound system
-        └── auth.js         # Authentication manager
+        ├── auth.js         # Authentication manager (+ isAdmin)
+        └── admin.js        # Admin panel controller
 ```
 
+## Admin Setup
+
+To promote a user to admin (required to access the Admin Panel):
+
+```bash
+node db/promote_admin.js <username>
+```
+
+Once promoted, a **⚙️ ADMIN** button appears on the main menu. The admin panel provides:
+- **Dashboard stats** - Total users, admins, categories, questions, games, wins
+- **User management** - View all users, create new users, edit roles, reset passwords, delete users
+- **Category management** - Create, edit, and delete categories (with cascade-delete of questions)
+
+> **Note:** If you already had the database running before this feature, run the migration first:
+> ```bash
+> mysql -u gameuser -p millionaire < db/migrate_add_role.sql
+> ```
+> Or rebuild the Docker volume: `docker-compose down -v && docker-compose up -d`
+
 ## API Endpoints
+
+### Public Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -87,6 +112,20 @@ millionaire-game/
 | GET | `/api/leaderboard/history` | Get personal game history |
 | GET | `/api/stats` | Get question count by category |
 | POST | `/api/game/save` | Save game result |
+
+### Admin Endpoints (require admin role)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/stats` | Dashboard statistics |
+| GET | `/api/admin/users` | List all users |
+| GET | `/api/admin/users/:id` | Get user details |
+| PUT | `/api/admin/users/:id` | Update user (username, email, role, password) |
+| DELETE | `/api/admin/users/:id` | Delete user |
+| GET | `/api/admin/categories` | List categories with question counts |
+| POST | `/api/admin/categories` | Create category |
+| PUT | `/api/admin/categories/:id` | Update category |
+| DELETE | `/api/admin/categories/:id` | Delete category (cascade-deletes questions) |
 
 ## Database Schema
 

@@ -83,6 +83,10 @@ class AuthManager {
     return this.user !== null && !this.isGuest;
   }
 
+  isAdmin() {
+    return this.isLoggedIn() && this.user.role === 'admin';
+  }
+
   getAuthHeaders() {
     return this.token ? { 'Authorization': `Bearer ${this.token}` } : {};
   }

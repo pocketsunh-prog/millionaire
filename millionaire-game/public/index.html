@@ -95,6 +95,7 @@
           <button id="btn-leaderboard" class="menu-btn">LEADERBOARD</button>
           <button id="btn-profile" class="menu-btn">MY PROFILE</button>
           <button id="btn-how-to" class="menu-btn">HOW TO PLAY</button>
+          <button id="btn-admin" class="menu-btn admin-btn hidden">⚙️ ADMIN</button>
         </div>
         <div id="category-select">
           <label for="category-dropdown">Select Category:</label>
@@ -274,12 +275,166 @@
         </div>
         <button id="btn-howto-back" class="menu-btn">BACK</button>
       </div>
+
+      <!-- Admin Screen -->
+      <div id="admin-screen" class="screen">
+        <div id="admin-container">
+          <div id="admin-header">
+            <h2>⚙️ ADMIN PANEL</h2>
+            <div id="admin-message" class="admin-message hidden"></div>
+          </div>
+
+          <!-- Stats Bar -->
+          <div id="admin-stats">
+            <div class="admin-stat-card">
+              <span class="admin-stat-value" id="stat-total-users">0</span>
+              <span class="admin-stat-label">Users</span>
+            </div>
+            <div class="admin-stat-card">
+              <span class="admin-stat-value" id="stat-total-admins">0</span>
+              <span class="admin-stat-label">Admins</span>
+            </div>
+            <div class="admin-stat-card">
+              <span class="admin-stat-value" id="stat-total-categories">0</span>
+              <span class="admin-stat-label">Categories</span>
+            </div>
+            <div class="admin-stat-card">
+              <span class="admin-stat-value" id="stat-total-questions">0</span>
+              <span class="admin-stat-label">Questions</span>
+            </div>
+            <div class="admin-stat-card">
+              <span class="admin-stat-value" id="stat-total-games">0</span>
+              <span class="admin-stat-label">Games</span>
+            </div>
+            <div class="admin-stat-card">
+              <span class="admin-stat-value" id="stat-total-wins">0</span>
+              <span class="admin-stat-label">Wins</span>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div id="admin-tabs">
+            <button class="admin-tab active" data-tab="users">👥 Users</button>
+            <button class="admin-tab" data-tab="categories">📁 Categories</button>
+          </div>
+
+          <!-- Users Panel -->
+          <div id="users-panel" class="admin-panel">
+            <div class="panel-toolbar">
+              <button id="btn-add-user" class="menu-btn small-btn">+ Add User</button>
+            </div>
+            <div class="table-wrapper">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Games</th>
+                    <th>Best Score</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Categories Panel -->
+          <div id="categories-panel" class="admin-panel hidden">
+            <div class="panel-toolbar">
+              <button id="btn-add-category" class="menu-btn small-btn">+ Add Category</button>
+            </div>
+            <div class="table-wrapper">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Questions</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="categories-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <button id="btn-admin-back" class="menu-btn">BACK TO MENU</button>
+        </div>
+      </div>
+
+      <!-- User Edit Modal -->
+      <div id="user-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 id="user-modal-title">Edit User</h3>
+            <button id="btn-user-modal-close" class="modal-close-btn">&times;</button>
+          </div>
+          <form id="user-form">
+            <input type="hidden" id="user-id">
+            <div class="input-group">
+              <label for="user-username">Username</label>
+              <input type="text" id="user-username" required minlength="3" maxlength="50">
+            </div>
+            <div class="input-group">
+              <label for="user-email">Email</label>
+              <input type="email" id="user-email">
+            </div>
+            <div class="input-group">
+              <label for="user-role">Role</label>
+              <select id="user-role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="user-password">Password</label>
+              <input type="password" id="user-password" minlength="4" autocomplete="new-password">
+              <span id="user-password-hint" class="input-hint"></span>
+            </div>
+            <div id="user-modal-error" class="auth-error"></div>
+            <div class="modal-actions">
+              <button type="button" id="user-modal-cancel" class="menu-btn cancel-btn">Cancel</button>
+              <button type="submit" class="menu-btn">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Category Edit Modal -->
+      <div id="category-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 id="category-modal-title">Edit Category</h3>
+            <button id="btn-category-modal-close" class="modal-close-btn">&times;</button>
+          </div>
+          <form id="category-form">
+            <input type="hidden" id="category-id">
+            <div class="input-group">
+              <label for="category-name">Name</label>
+              <input type="text" id="category-name" required maxlength="100">
+            </div>
+            <div class="input-group">
+              <label for="category-description">Description</label>
+              <textarea id="category-description" maxlength="255" rows="3"></textarea>
+            </div>
+            <div id="category-modal-error" class="auth-error"></div>
+            <div class="modal-actions">
+              <button type="button" id="category-modal-cancel" class="menu-btn cancel-btn">Cancel</button>
+              <button type="submit" class="menu-btn">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="/js/audio.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
   <script src="/js/game.js"></script>
 </body>
 </html>

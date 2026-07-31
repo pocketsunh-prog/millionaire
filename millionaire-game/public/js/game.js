@@ -38,14 +38,17 @@ class MillionaireGame {
 
   updateUserBar() {
     const bar = document.getElementById('user-bar');
+    const adminBtn = document.getElementById('btn-admin');
     if (window.authManager.isLoggedIn()) {
       bar.classList.remove('hidden');
       document.getElementById('user-avatar').textContent = window.authManager.user.avatar;
       document.getElementById('user-name').textContent = window.authManager.user.username;
       document.getElementById('mini-wins').textContent = window.authManager.user.total_wins;
       document.getElementById('mini-best').textContent = window.authManager.user.best_score.toLocaleString();
+      adminBtn.classList.toggle('hidden', !window.authManager.isAdmin());
     } else {
       bar.classList.add('hidden');
+      adminBtn.classList.add('hidden');
     }
   }
 
@@ -336,6 +339,8 @@ class MillionaireGame {
     document.getElementById('btn-start').addEventListener('click', () => this.startGame());
     document.getElementById('btn-leaderboard').addEventListener('click', () => this.showLeaderboard());
     document.getElementById('btn-how-to').addEventListener('click', () => this.showHowTo());
+    document.getElementById('btn-admin').addEventListener('click', () => window.adminManager.init());
+    document.getElementById('btn-admin-back').addEventListener('click', () => this.showScreen('main-menu'));
     document.getElementById('btn-play-again').addEventListener('click', () => this.startGame());
     document.getElementById('btn-back-menu').addEventListener('click', () => this.showScreen('main-menu'));
     document.getElementById('btn-lb-back').addEventListener('click', () => this.showScreen('main-menu'));

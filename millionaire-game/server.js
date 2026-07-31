@@ -44,6 +44,21 @@ async function getAuthenticatedUser(req) {
   return sessions.length > 0 ? sessions[0] : null;
 }
 
+// Returns the authenticated user only if they have the 'admin' role.
+// Used to guard all /api/admin/* routes.
+async function requireAdmin(req, res) {
+  const user = await getAuthenticatedUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return null;
+  }
+  if (user.role !== 'admin') {
+    res.status(403).json({ error: 'Admin access required' });
+    return null;
+  }
+  return user;
+}
+
 // ============ AUTH ENDPOINTS ============
 
 app.post('/api/auth/register', async (req, res) => {
@@ -148,6 +163,7 @@ app.get('/api/auth/me', async (req, res) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      role: user.role,
       total_games: user.total_games,
       total_wins: user.total_wins,
       best_score: user.best_score,
@@ -370,6 +386,329 @@ app.get('/api/stats', async (req, res) => {
        ORDER BY count DESC`
     );
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ ADMIN ENDPOINTS ============
+
+// --- Admin: Users ---
+
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const [rows] = await pool.execute(
+      `SELECT id, username, email, avatar, role, total_games, total_wins,
+              best_score, best_question, created_at, last_login
+       FROM users
+       ORDER BY created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/users/:id', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const [rows] = await pool.execute(
+      `SELECT id, username, email, avatar, role, total_games, total_wins,
+              best_score, best_question, created_at, last_login
+       FROM users WHERE id = ?`,
+      [req.params.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/admin/users/:id', async (req, res) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const { username, email, role, password } = req.body;
+    const userId = parseInt(req.params.id);
+
+    // Prevent admin from demoting/deleting themselves
+    if (userId === admin.id && role && role !== 'admin') {
+      return res.status(400).json({ error: 'Cannot change your own admin role' });
+    }
+
+    // Check the user exists
+    const [existing] = await pool.execute('SELECT id, role FROM users WHERE id = ?', [userId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Build dynamic update
+    const updates = [];
+    const params = [];
+
+    if (username !== undefined) {
+      if (username.length < 3 || username.length > 50) {
+        return res.status(400).json({ error: 'Username must be 3-50 characters' });
+      }
+      // Check uniqueness (excluding current user)
+      const [dup] = await pool.execute('SELECT id FROM users WHERE username = ? AND id != ?', [username, userId]);
+      if (dup.length > 0) {
+        return res.status(409).json({ error: 'Username already taken' });
+      }
+      updates.push('username = ?');
+      params.push(username);
+    }
+
+    if (email !== undefined) {
+      updates.push('email = ?');
+      params.push(email || null);
+    }
+
+    if (role !== undefined) {
+      if (!['user', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role' });
+      }
+      // Prevent removing the last admin
+      if (existing[0].role === 'admin' && role === 'user') {
+        const [adminCount] = await pool.execute("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin'");
+        if (adminCount[0].cnt <= 1) {
+          return res.status(400).json({ error: 'Cannot remove the last admin' });
+        }
+      }
+      updates.push('role = ?');
+      params.push(role);
+    }
+
+    if (password !== undefined) {
+      if (password.length < 4) {
+        return res.status(400).json({ error: 'Password must be at least 4 characters' });
+      }
+      updates.push('password_hash = ?');
+      params.push(hashPassword(password));
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    params.push(userId);
+    await pool.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    const [updated] = await pool.execute(
+      `SELECT id, username, email, avatar, role, total_games, total_wins,
+              best_score, best_question, created_at, last_login
+       FROM users WHERE id = ?`,
+      [userId]
+    );
+    res.json(updated[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const userId = parseInt(req.params.id);
+
+    // Prevent self-deletion
+    if (userId === admin.id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    const [existing] = await pool.execute('SELECT id, role FROM users WHERE id = ?', [userId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Prevent deleting the last admin
+    if (existing[0].role === 'admin') {
+      const [adminCount] = await pool.execute("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin'");
+      if (adminCount[0].cnt <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the last admin' });
+      }
+    }
+
+    await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+    res.json({ success: true, deletedId: userId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Admin: Categories ---
+
+app.get('/api/admin/categories', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const [rows] = await pool.execute(
+      `SELECT c.id, c.name, c.description, c.created_at,
+              COUNT(q.id) as question_count
+       FROM categories c
+       LEFT JOIN questions q ON c.id = q.category_id
+       GROUP BY c.id, c.name, c.description, c.created_at
+       ORDER BY c.name`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/categories', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { name, description } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Category name is required' });
+    }
+    if (name.length > 100) {
+      return res.status(400).json({ error: 'Category name must be 100 characters or less' });
+    }
+
+    const [existing] = await pool.execute('SELECT id FROM categories WHERE name = ?', [name.trim()]);
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'Category already exists' });
+    }
+
+    const [result] = await pool.execute(
+      'INSERT INTO categories (name, description) VALUES (?, ?)',
+      [name.trim(), description || null]
+    );
+
+    const [rows] = await pool.execute(
+      `SELECT c.id, c.name, c.description, c.created_at,
+              COUNT(q.id) as question_count
+       FROM categories c
+       LEFT JOIN questions q ON c.id = q.category_id
+       WHERE c.id = ?
+       GROUP BY c.id, c.name, c.description, c.created_at`,
+      [result.insertId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/admin/categories/:id', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const { name, description } = req.body;
+    const catId = parseInt(req.params.id);
+
+    const [existing] = await pool.execute('SELECT id FROM categories WHERE id = ?', [catId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return res.status(400).json({ error: 'Category name cannot be empty' });
+      }
+      if (name.length > 100) {
+        return res.status(400).json({ error: 'Category name must be 100 characters or less' });
+      }
+      const [dup] = await pool.execute('SELECT id FROM categories WHERE name = ? AND id != ?', [name.trim(), catId]);
+      if (dup.length > 0) {
+        return res.status(409).json({ error: 'Category name already taken' });
+      }
+      updates.push('name = ?');
+      params.push(name.trim());
+    }
+
+    if (description !== undefined) {
+      updates.push('description = ?');
+      params.push(description || null);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    params.push(catId);
+    await pool.execute(`UPDATE categories SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    const [rows] = await pool.execute(
+      `SELECT c.id, c.name, c.description, c.created_at,
+              COUNT(q.id) as question_count
+       FROM categories c
+       LEFT JOIN questions q ON c.id = q.category_id
+       WHERE c.id = ?
+       GROUP BY c.id, c.name, c.description, c.created_at`,
+      [catId]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/categories/:id', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const catId = parseInt(req.params.id);
+
+    const [existing] = await pool.execute('SELECT id, name FROM categories WHERE id = ?', [catId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    // Count questions that will be cascade-deleted
+    const [count] = await pool.execute('SELECT COUNT(*) as cnt FROM questions WHERE category_id = ?', [catId]);
+    const questionCount = count[0].cnt;
+
+    await pool.execute('DELETE FROM categories WHERE id = ?', [catId]);
+    res.json({ success: true, deletedId: catId, questionsDeleted: questionCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Admin: Stats Dashboard ---
+
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const [[userStats]] = await pool.execute(
+      `SELECT COUNT(*) as total_users,
+              SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as total_admins
+       FROM users`
+    );
+    const [[questionStats]] = await pool.execute('SELECT COUNT(*) as total_questions FROM questions');
+    const [[categoryStats]] = await pool.execute('SELECT COUNT(*) as total_categories FROM categories');
+    const [[gameStats]] = await pool.execute(
+      `SELECT COUNT(*) as total_games,
+              SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END) as total_wins
+       FROM game_sessions`
+    );
+
+    res.json({
+      total_users: userStats.total_users,
+      total_admins: userStats.total_admins,
+      total_questions: questionStats.total_questions,
+      total_categories: categoryStats.total_categories,
+      total_games: gameStats.total_games,
+      total_wins: gameStats.total_wins,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
