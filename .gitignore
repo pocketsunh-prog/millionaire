@@ -31,3 +31,5 @@ Thumbs.db
 *.log
 npm-debug.log*
 /android/.gradle
+/.reasonix
+/millionaire-rn/android/gradle
