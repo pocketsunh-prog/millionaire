@@ -9,6 +9,7 @@ import {
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {getCategories} from '../api/game';
 import {getLocalCategories} from '../db/repository';
+import {isOnline} from '../net';
 import {ErrorView, Loading, Screen} from '../components/ui';
 import {colors} from '../theme';
 import type {Category, RootStackParamList} from '../types';
@@ -43,6 +44,10 @@ export default function CategoryScreen({navigation}: Props) {
     setLoading(true);
     setError('');
     try {
+      // Skip the network attempt when the device is known-offline.
+      if (!(await isOnline())) {
+        throw new Error('offline');
+      }
       setCategories(await getCategories());
     } catch {
       // Offline → use the locally synced categories if available.

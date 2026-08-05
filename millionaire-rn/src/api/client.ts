@@ -3,6 +3,13 @@ import {getApiBaseUrl} from '../config';
 
 const TOKEN_KEY = 'millionaire_token';
 
+/**
+ * Timeout for every request. Keeps offline/fallback paths snappy: when the
+ * server is unreachable the request aborts after this long instead of hanging
+ * for tens of seconds.
+ */
+const REQUEST_TIMEOUT_MS = 5000;
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -39,14 +46,28 @@ async function request<T>(
 
   const baseUrl = await getApiBaseUrl();
 
+  // Abort the request after REQUEST_TIMEOUT_MS so unreachable servers fail
+  // fast (offline fallback, error messages) instead of hanging.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  if (options.signal) {
+    options.signal.addEventListener('abort', () => controller.abort());
+  }
+
   let res: Response;
   try {
-    res = await fetch(`${baseUrl}${path}`, {...options, headers});
+    res = await fetch(`${baseUrl}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
   } catch {
     throw new ApiError(
       `Cannot reach server at ${baseUrl}. Is the backend running?`,
       0,
     );
+  } finally {
+    clearTimeout(timeout);
   }
 
   const data = await res.json().catch(() => null);

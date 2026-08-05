@@ -38,3 +38,9 @@ jest.mock('@op-engineering/op-sqlite', () => {
     open: jest.fn(() => db),
   };
 });
+
+jest.mock('@react-native-community/netinfo', () => ({
+  fetch: jest.fn(() =>
+    Promise.resolve({isConnected: true, isInternetReachable: true}),
+  ),
+}));

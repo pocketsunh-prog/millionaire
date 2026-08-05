@@ -17,13 +17,13 @@ const STATUS_ICON: Record<string, string> = {
 };
 
 export default function ProfileScreen({navigation}: Props) {
-  const {user, isGuest, logout} = useAuth();
+  const {user, isGuest, isOffline, logout} = useAuth();
   const [history, setHistory] = useState<GameHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (!user || isGuest) {
+    if (!user || isGuest || isOffline) {
       setLoading(false);
       return;
     }
@@ -36,7 +36,7 @@ export default function ProfileScreen({navigation}: Props) {
     } finally {
       setLoading(false);
     }
-  }, [user, isGuest]);
+  }, [user, isGuest, isOffline]);
 
   useEffect(() => {
     load();
@@ -74,10 +74,11 @@ export default function ProfileScreen({navigation}: Props) {
             </View>
 
             <Text style={styles.historyTitle}>GAME HISTORY</Text>
-            {isGuest && (
+            {(isGuest || isOffline) && (
               <Text style={styles.guestNote}>
-                Guest mode — history and online stats need a server connection.
-                Your offline results are uploaded when you sync.
+                {isGuest
+                  ? 'Guest mode — history and online stats need a server connection. Your offline results are uploaded when you sync.'
+                  : 'Offline session — history and stats will appear after you sign in while connected. Offline results are uploaded when you sync.'}
               </Text>
             )}
           </View>

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useAuth} from '../context/AuthContext';
+import {ApiError} from '../api/client';
 import {Screen, GoldButton} from '../components/ui';
 import {colors} from '../theme';
 import type {RootStackParamList} from '../types';
@@ -16,11 +17,15 @@ import type {RootStackParamList} from '../types';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({navigation}: Props) {
-  const {login, loginAsGuest} = useAuth();
+  const {login, loginOffline, loginAsGuest} = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const enterHome = () =>
+    navigation.reset({index: 0, routes: [{name: 'Home'}]});
 
   const submit = async () => {
     if (!identifier.trim() || !password) {
@@ -28,11 +33,27 @@ export default function LoginScreen({navigation}: Props) {
       return;
     }
     setError('');
+    setInfo('');
     setBusy(true);
     try {
       await login(identifier.trim(), password);
-      navigation.reset({index: 0, routes: [{name: 'Home'}]});
+      enterHome();
     } catch (err) {
+      // Server unreachable → try verifying against locally cached credentials.
+      if (err instanceof ApiError && err.status === 0) {
+        const cached = await loginOffline(identifier.trim(), password);
+        if (cached) {
+          setInfo(
+            `Logged in offline as ${cached.username}. Stats will sync when you sign in online.`,
+          );
+          enterHome();
+          return;
+        }
+        setError(
+          'Offline: cannot verify these credentials. Sign in once while connected to enable offline login, or use guest mode.',
+        );
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setBusy(false);
@@ -70,6 +91,7 @@ export default function LoginScreen({navigation}: Props) {
           />
 
           {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!info && <Text style={styles.info}>{info}</Text>}
 
           <GoldButton label={busy ? 'Signing in…' : 'Sign In'} onPress={submit} disabled={busy} />
           <Text style={styles.hint} onPress={() => navigation.navigate('Register')}>
@@ -85,7 +107,7 @@ export default function LoginScreen({navigation}: Props) {
               style={styles.offlineLink}
               onPress={async () => {
                 await loginAsGuest();
-                navigation.reset({index: 0, routes: [{name: 'Home'}]});
+                enterHome();
               }}>
               📴 Play offline (guest)
             </Text>
@@ -140,6 +162,12 @@ const styles = StyleSheet.create({
     color: colors.red,
     fontSize: 13,
     textAlign: 'center',
+  },
+  info: {
+    color: colors.green,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   hint: {
     color: colors.textMuted,

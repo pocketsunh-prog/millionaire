@@ -138,16 +138,25 @@ millionaire-rn/
 The app can be played without internet by syncing the question bank into a
 local SQLite database (`@op-engineering/op-sqlite`).
 
-- **Sync**: Home screen → **📦 Offline data** → **🔄 Sync offline data**
-  downloads all categories + questions from the server into SQLite. A one-time
-  auto-sync also runs on first launch when the local bank is empty.
-- **Offline play**: if the server is unreachable, the category list and game
-  questions are served from local SQLite (a 📴 OFFLINE MODE banner shows).
+- **Sync (manual)**: Home screen → **📦 Offline data** → **🔄 Sync offline data**
+  downloads all categories + questions from the server into SQLite. Nothing is
+  downloaded automatically — sync only when you tap the button.
+- **Offline play**: when the device is offline (or the server is unreachable),
+  the category list and game questions are served from local SQLite instantly —
+  the app skips the network attempt entirely and falls back to the saved bank
+  (📴 OFFLINE MODE banner). Requests also time out after 5 s so nothing hangs.
 - **Queued results**: games finished offline are saved into a `pending_results`
   table and uploaded automatically on the next successful sync.
 - **Guest mode**: on the Login screen, **📴 Play offline (guest)** lets you
   play without an account — stats stay on the device and results upload on
   the next sync (as "Guest").
+- **Offline login**: sign in **once while connected** (login or register), and
+  the app caches a salted hash of your credentials plus your profile. When the
+  server is unreachable, the Login screen verifies your typed credentials
+  against that cache and restores your session (shown as "Logged in offline").
+  Results are queued locally and upload when you sync. The plaintext password
+  is never stored. Credentials can't be verified offline on a device that has
+  never signed in — use guest mode in that case.
 
 Storage layout: `src/db/` — `database.ts` (schema/open), `repository.ts`
 (typed SQL access), `sync.ts` (fetch → SQLite + result queue).

@@ -11,6 +11,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {startGame} from '../api/game';
 import {saveResultOfflineSafe} from '../db/sync';
 import {getLocalQuestions} from '../db/repository';
+import {isOnline} from '../net';
 import {useAuth} from '../context/AuthContext';
 import {AudiencePoll} from '../components/AudiencePoll';
 import {PrizeLadder} from '../components/PrizeLadder';
@@ -73,6 +74,11 @@ export default function GameScreen({route, navigation}: Props) {
     setLoading(true);
     setError('');
     try {
+      // Skip the network attempt entirely when the device is known-offline,
+      // so offline play starts instantly.
+      if (!(await isOnline())) {
+        throw new Error('offline');
+      }
       const data = await startGame(category);
       if (!data.questions.length) {
         throw new Error('No questions available for this category yet.');
@@ -80,7 +86,7 @@ export default function GameScreen({route, navigation}: Props) {
       setQuestions(data.questions);
       setOffline(false);
     } catch {
-      // Network unreachable → fall back to the local SQLite bank.
+      // Offline or unreachable → fall back to the local SQLite bank.
       const local = getLocalQuestions(category);
       if (local.length > 0) {
         setQuestions(local);

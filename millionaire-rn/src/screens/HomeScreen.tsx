@@ -1,17 +1,18 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useAuth} from '../context/AuthContext';
 import {GhostButton, GoldButton, Screen} from '../components/ui';
 import {flushPendingResults, getLastSync, syncOfflineData} from '../db/sync';
 import {getLocalStats, pendingResultCount} from '../db/repository';
+import {isOnline} from '../net';
 import {colors, formatMoney} from '../theme';
 import type {RootStackParamList} from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props) {
-  const {user, isGuest, logout} = useAuth();
+  const {user, isGuest, isOffline, logout} = useAuth();
 
   const [stats, setStats] = useState({categories: 0, questions: 0});
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -28,10 +29,13 @@ export default function HomeScreen({navigation}: Props) {
   }, []);
 
   const doSync = useCallback(
-    async (silent = false) => {
+    async () => {
       setSyncing(true);
-      if (!silent) setSyncMsg(null);
+      setSyncMsg(null);
       try {
+        if (!(await isOnline())) {
+          throw new Error('device is offline — connect to the server first');
+        }
         const result = await syncOfflineData();
         const flushed = await flushPendingResults();
         refreshOffline();
@@ -58,15 +62,6 @@ export default function HomeScreen({navigation}: Props) {
     [refreshOffline],
   );
 
-  // First launch convenience: sync once if the local bank is empty and the
-  // server is reachable, so offline play works right away.
-  useEffect(() => {
-    if (stats.questions === 0) {
-      doSync(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fmtSync = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString() : 'never';
 
@@ -78,6 +73,8 @@ export default function HomeScreen({navigation}: Props) {
         <Text style={styles.sub}>
           {isGuest
             ? 'Guest mode — offline play, stats stay on this device'
+            : isOffline
+            ? 'Logged in offline — sign in while connected to sync stats'
             : user
             ? `Best score: ${formatMoney(user.best_score)} · Games: ${user.total_games}`
             : 'Sign in to track your stats'}
