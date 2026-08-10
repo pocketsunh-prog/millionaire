@@ -35,12 +35,17 @@ class WifiDirectTransport(private val context: Context) {
     private class WifiConnection(
         private val socket: Socket,
         override val remoteName: String,
+        private val onClose: (suspend () -> Unit)? = null,
         override val transportType: TransportType = TransportType.WIFI_DIRECT
     ) : P2pConnection {
         override val inputStream: InputStream = socket.inputStream
         override val outputStream: OutputStream = socket.outputStream
         override fun close() {
             runCatching { socket.close() }
+            // Best-effort cleanup (e.g. the host removing its group) once the
+            // socket is gone. Keeps the framework from staying BUSY. close() runs
+            // on the IO dispatcher during sync teardown, so runBlocking is safe.
+            runCatching { onClose?.let { kotlinx.coroutines.runBlocking { it() } } }
         }
     }
 
@@ -51,30 +56,85 @@ class WifiDirectTransport(private val context: Context) {
     /**
      * Host: create a group (we become the group owner), then listen on the TCP port.
      * Blocks until a client connects. Returns the connection.
+     *
+     * Wi-Fi Direct group formation is flaky and the framework refuses with BUSY
+     * (reason=2) if a previous group still lingers, so we clear any stale group
+     * first and retry a few times before giving up.
      */
     suspend fun listen(): P2pConnection {
-        // Form a group so we're the owner and have a known port to listen on.
-        withTimeoutOrNull(SyncConstants.DISCOVERY_TIMEOUT_MS) {
-            suspendCancellableCoroutine<Unit> { cont ->
-                val ch = ensureChannel()
-                manager.createGroup(ch, object : WifiP2pManager.ActionListener {
-                    override fun onSuccess() { cont.resume(Unit) }
-                    override fun onFailure(reason: Int) {
-                        cont.resumeWithException(Exception("createGroup failed (reason=$reason)"))
-                    }
-                })
-            }
-        } ?: throw Exception("Timed out forming Wi-Fi Direct group")
-
-        val serverSocket = ServerSocket(SyncConstants.WIFI_DIRECT_PORT)
-        return try {
-            val socket = serverSocket.accept()
-            // Best-effort name; we learn the peer's real name from its HELLO frame.
-            val name = socket.inetAddress?.hostAddress ?: "Wi-Fi Direct peer"
-            WifiConnection(socket, name)
-        } finally {
-            runCatching { serverSocket.close() }
+        if (!isWifiEnabled()) {
+            throw Exception("Wi-Fi is off — enable Wi-Fi to host a Direct sync")
         }
+
+        var lastReason = -1
+        for (attempt in 0 until GROUP_CREATE_RETRIES) {
+            // Clear any group left over from a previous sync so the framework isn't BUSY.
+            removeGroup()
+
+            // runCatching converts both a timeout (null) and a createGroup failure
+            // (resumeWithException throws) into null so the retry loop works.
+            val created = runCatching {
+                withTimeoutOrNull(SyncConstants.DISCOVERY_TIMEOUT_MS) {
+                    suspendCancellableCoroutine<Unit> { cont ->
+                        val ch = ensureChannel()
+                        manager.createGroup(ch, object : WifiP2pManager.ActionListener {
+                            override fun onSuccess() { cont.resume(Unit) }
+                            override fun onFailure(reason: Int) {
+                                lastReason = reason
+                                cont.resumeWithException(Exception("createGroup failed (reason=$reason)"))
+                            }
+                        })
+                    }
+                }
+            }.getOrNull()
+
+            if (created != null) {
+                // Group formed. Listen for a client, and remove the group once the
+                // connection closes so the next sync doesn't hit BUSY.
+                val serverSocket = ServerSocket(SyncConstants.WIFI_DIRECT_PORT)
+                return try {
+                    val socket = serverSocket.accept()
+                    // Best-effort name; we learn the peer's real name from its HELLO frame.
+                    val name = socket.inetAddress?.hostAddress ?: "Wi-Fi Direct peer"
+                    WifiConnection(socket, name, onClose = { removeGroup() })
+                } finally {
+                    runCatching { serverSocket.close() }
+                }
+            }
+
+            // Timed out or failed — brief backoff before retrying.
+            if (attempt < GROUP_CREATE_RETRIES - 1) {
+                kotlinx.coroutines.delay(GROUP_CREATE_RETRY_DELAY_MS)
+            }
+        }
+
+        throw Exception("Failed to form Wi-Fi Direct group after $GROUP_CREATE_RETRIES attempts (last reason=$lastReason)")
+    }
+
+    /**
+     * Best-effort removal of any existing group. A stale group is the usual reason
+     * createGroup returns BUSY (reason=2), so we call this before every attempt and
+     * when the host connection closes. Failures are swallowed — there may be no
+     * group to remove.
+     */
+    private suspend fun removeGroup() {
+        runCatching {
+            withTimeoutOrNull(GROUP_REMOVE_TIMEOUT_MS) {
+                suspendCancellableCoroutine<Unit> { cont ->
+                    val ch = ensureChannel()
+                    manager.removeGroup(ch, object : WifiP2pManager.ActionListener {
+                        override fun onSuccess() { cont.resume(Unit) }
+                        override fun onFailure(reason: Int) { cont.resume(Unit) }
+                    })
+                }
+            }
+        }
+    }
+
+    private fun isWifiEnabled(): Boolean {
+        val wifi = context.applicationContext
+            .getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+        return wifi?.isWifiEnabled == true
     }
 
     /**
@@ -171,5 +231,14 @@ class WifiDirectTransport(private val context: Context) {
     companion object {
         fun isSupported(context: Context): Boolean =
             context.packageManager.hasSystemFeature("android.hardware.wifi.direct")
+
+        /** How many times to attempt group formation before giving up. */
+        private const val GROUP_CREATE_RETRIES = 3
+
+        /** Backoff between group-formation attempts (ms). */
+        private const val GROUP_CREATE_RETRY_DELAY_MS = 800L
+
+        /** Budget for a removeGroup() call to settle (ms). */
+        private const val GROUP_REMOVE_TIMEOUT_MS = 5_000L
     }
 }
