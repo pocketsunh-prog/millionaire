@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.millionaire.game.data.api.ApiClient
+import com.millionaire.game.data.api.ApiParser
 import com.millionaire.game.data.model.User
 import com.millionaire.game.data.repository.GameRepository
 import com.millionaire.game.databinding.ActivityLoginBinding
@@ -57,7 +58,7 @@ class LoginActivity : AppCompatActivity() {
                 val response = ApiClient.getService(this@LoginActivity).login(body)
 
                 if (response.isSuccessful && response.body() != null) {
-                    val responseBody = response.body()!!
+                    val responseBody = ApiParser.parseMap(response.body()!!)
                     val token = responseBody["token"] as String
                     val userMap = responseBody["user"] as Map<*, *>
 

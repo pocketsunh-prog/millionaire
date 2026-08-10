@@ -8,8 +8,11 @@ import com.millionaire.game.data.model.Category
 import com.millionaire.game.data.model.Question
 import com.millionaire.game.data.model.GameSession
 import com.millionaire.game.data.model.LeaderboardEntry
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
-class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "millionaire.db"
@@ -295,5 +298,71 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COL_SYNC_TIME, System.currentTimeMillis().toString())
         }
         db.insertWithOnConflict(TABLE_SYNC_META, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    // --- Peer sync helpers (export / backup / restore) ---
+
+    /** Absolute path to the live database file. */
+    fun getDatabaseFile(): File = context.getDatabasePath(DATABASE_NAME)
+
+    /** Absolute path the peer merger backs the DB up to before merging. */
+    fun getBackupFile(): File = File(getDatabaseFile().parent, "$DATABASE_NAME.bak")
+
+    /**
+     * Returns the column names for a table by querying one row. Used by the exporter
+     * to build ROW frames keyed by the exact SQLite column names.
+     */
+    fun getTableColumns(tableName: String): List<String> {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $tableName LIMIT 1", null)
+        return cursor.use { it.columnNames.toList() }
+    }
+
+    /**
+     * Streams every row of [tableName] as a (columnNames, rows) pair, where each row
+     * is a list of column values converted to String (NULL -> ""). Reads lazily via
+     * cursor; the caller decides how to chunk/emit.
+     */
+    fun getAllRows(tableName: String): Pair<List<String>, List<List<String?>>> {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $tableName", null)
+        val columns = cursor.columnNames.toList()
+        val rows = mutableListOf<List<String?>>()
+        cursor.use {
+            while (it.moveToNext()) {
+                val row = ArrayList<String?>(columns.size)
+                for (i in columns.indices) {
+                    row.add(it.getString(i))
+                }
+                rows.add(row)
+            }
+        }
+        return Pair(columns, rows)
+    }
+
+    /** Total row count for a table (for the manifest). */
+    fun getRowCount(tableName: String): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $tableName", null)
+        return cursor.use { if (it.moveToFirst()) it.getInt(0) else 0 }
+    }
+
+    /**
+     * Replaces the live database with the contents of [backupFile]. Caller must ensure
+     * no DB handle is open (the merger closes this helper first). Uses a fast channel
+     * copy and then reopens the DB.
+     */
+    fun restoreFromBackup(backupFile: File) {
+        val target = getDatabaseFile()
+        close()
+        FileInputStream(backupFile).use { src ->
+            FileOutputStream(target).use { dst ->
+                src.channel.use { srcCh ->
+                    dst.channel.use { dstCh ->
+                        srcCh.transferTo(0, srcCh.size(), dstCh)
+                    }
+                }
+            }
+        }
     }
 }

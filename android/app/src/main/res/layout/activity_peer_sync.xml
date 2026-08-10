@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient">
+
+    <!-- Top bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="←"
+            android:textSize="20sp"
+            android:textColor="@color/gold"
+            android:background="@android:color/transparent" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/peer_sync_title"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/gold"
+            android:gravity="center" />
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="40dp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/peer_sync_subtitle"
+                android:textSize="14sp"
+                android:textColor="@color/light_gray"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Role selection -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/peer_sync_role"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:layout_marginBottom="8dp" />
+
+            <RadioGroup
+                android:id="@+id/groupRole"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <RadioButton
+                    android:id="@+id/rbHost"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/peer_sync_role_host"
+                    android:textColor="@color/white"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/rbClient"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/peer_sync_role_client"
+                    android:textColor="@color/white" />
+            </RadioGroup>
+
+            <!-- Transport selection -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/peer_sync_transport"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:layout_marginBottom="8dp" />
+
+            <RadioGroup
+                android:id="@+id/groupTransport"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp">
+
+                <RadioButton
+                    android:id="@+id/rbAuto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/peer_sync_transport_auto"
+                    android:textColor="@color/white"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/rbWifi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/peer_sync_transport_wifi"
+                    android:textColor="@color/white" />
+
+                <RadioButton
+                    android:id="@+id/rbBluetooth"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/peer_sync_transport_bt"
+                    android:textColor="@color/white" />
+            </RadioGroup>
+
+            <!-- Start -->
+            <Button
+                android:id="@+id/btnStart"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="@string/peer_sync_start"
+                android:textSize="16sp"
+                android:textColor="@color/dark_blue"
+                android:background="@drawable/btn_primary"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Progress section (hidden until sync starts) -->
+            <LinearLayout
+                android:id="@+id/groupProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvPhase"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:layout_marginBottom="8dp" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="@color/gold"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="@color/light_gray"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btnCancel"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="@string/peer_sync_cancel"
+                    android:textSize="14sp"
+                    android:textColor="@color/gold"
+                    android:background="@android:color/transparent" />
+            </LinearLayout>
+
+            <!-- Result section (hidden until sync finishes) -->
+            <LinearLayout
+                android:id="@+id/groupResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvResult"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:layout_marginBottom="16dp" />
+
+                <Button
+                    android:id="@+id/btnSyncAgain"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="@string/peer_sync_again"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:background="@drawable/btn_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btnRestore"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="@string/peer_sync_restore"
+                    android:textSize="14sp"
+                    android:textColor="@color/orange"
+                    android:background="@android:color/transparent"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btnDone"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="@string/peer_sync_done_btn"
+                    android:textSize="16sp"
+                    android:textColor="@color/dark_blue"
+                    android:background="@drawable/btn_primary" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

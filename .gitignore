@@ -33,3 +33,5 @@ npm-debug.log*
 /android/.gradle
 /.reasonix
 /millionaire-rn/android/gradle
+reasonix.toml
+.mcp.json

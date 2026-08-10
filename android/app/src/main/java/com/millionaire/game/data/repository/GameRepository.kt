@@ -3,6 +3,7 @@ package com.millionaire.game.data.repository
 import android.content.Context
 import android.util.Log
 import com.millionaire.game.data.api.ApiClient
+import com.millionaire.game.data.api.ApiParser
 import com.millionaire.game.data.api.ApiService
 import com.millionaire.game.data.db.DatabaseHelper
 import com.millionaire.game.data.model.*
@@ -47,7 +48,7 @@ class GameRepository(context: Context) {
         try {
             val response = api().getCategories()
             if (response.isSuccessful && response.body() != null) {
-                val categories = response.body()!!.map { map ->
+                val categories = ApiParser.parseList(response.body()!!).map { map ->
                     Category(
                         id = (map["id"] as Double).toInt(),
                         name = map["name"] as String,
@@ -75,7 +76,7 @@ class GameRepository(context: Context) {
             // full bank instead of a small fixed subset, so repeats are rare.
             val response = api().getQuestions(limit = SYNC_QUESTION_LIMIT)
             if (response.isSuccessful && response.body() != null) {
-                val questions = response.body()!!.map { map ->
+                val questions = ApiParser.parseList(response.body()!!).map { map ->
                     Question(
                         id = (map["id"] as Double).toInt(),
                         categoryId = (map["category_id"] as Double).toInt(),
@@ -214,7 +215,7 @@ class GameRepository(context: Context) {
             try {
                 val response = api().getLeaderboard(sortBy)
                 if (response.isSuccessful && response.body() != null) {
-                    response.body()!!.map { map ->
+                    ApiParser.parseList(response.body()!!).map { map ->
                         LeaderboardEntry(
                             username = map["username"] as String,
                             avatar = map["avatar"] as? String ?: "🏆",

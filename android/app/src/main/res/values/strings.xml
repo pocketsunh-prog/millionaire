@@ -49,4 +49,34 @@
     <string name="test_success_with_count">✓ Connected — %d categories found</string>
     <string name="test_success_empty">✓ Connected — server reachable (no categories yet)</string>
     <string name="test_failed">✗ Could not connect: %s</string>
+
+    <!-- Peer sync -->
+    <string name="peer_sync_title">Sync with a friend</string>
+    <string name="peer_sync_subtitle">Merge your question bank and game history with another device. No internet needed.</string>
+    <string name="peer_sync_role">Choose your role</string>
+    <string name="peer_sync_role_host">Host (wait for a device)</string>
+    <string name="peer_sync_role_client">Client (find a device)</string>
+    <string name="peer_sync_transport">Connection type</string>
+    <string name="peer_sync_transport_auto">Automatic (Wi-Fi Direct → Bluetooth)</string>
+    <string name="peer_sync_transport_wifi">Wi-Fi Direct</string>
+    <string name="peer_sync_transport_bt">Bluetooth</string>
+    <string name="peer_sync_start">START SYNC</string>
+    <string name="peer_sync_cancel">Cancel</string>
+    <string name="peer_sync_phase_discovering">Searching for device…</string>
+    <string name="peer_sync_phase_connecting">Connecting…</string>
+    <string name="peer_sync_phase_handshaking">Handshaking…</string>
+    <string name="peer_sync_phase_transferring">Syncing %1$s (%2$d/%3$d)</string>
+    <string name="peer_sync_phase_merging">Merging data…</string>
+    <string name="peer_sync_phase_done">Sync complete!</string>
+    <string name="peer_sync_phase_error">Sync failed</string>
+    <string name="peer_sync_result">Synced with %1$s via %2$s\nReceived: %3$d items\nConflicts resolved: %4$d</string>
+    <string name="peer_sync_again">Sync again</string>
+    <string name="peer_sync_restore">Restore pre-sync backup</string>
+    <string name="peer_sync_done_btn">Done</string>
+    <string name="peer_sync_permission_rationale">Sync needs location and nearby-device permissions to find the other phone.</string>
+    <string name="peer_sync_permission_denied">Permissions are required to sync. Please enable them in settings.</string>
+    <string name="peer_sync_open_settings">Open settings</string>
+    <string name="peer_sync_no_transport">No wireless connection available. Enable Wi-Fi Direct or Bluetooth and try again.</string>
+    <string name="peer_sync_settings_entry">Sync with a friend</string>
+    <string name="peer_sync_settings_summary">Merge data with another device nearby</string>
 </resources>

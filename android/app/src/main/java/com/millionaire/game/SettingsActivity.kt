@@ -1,13 +1,16 @@
 package com.millionaire.game
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.millionaire.game.data.api.ApiClient
+import com.millionaire.game.data.api.ApiParser
 import com.millionaire.game.data.repository.GameRepository
 import com.millionaire.game.databinding.ActivitySettingsBinding
+import com.millionaire.game.p2p.PeerSyncActivity
 import com.millionaire.game.util.ServerConfig
 import kotlinx.coroutines.launch
 
@@ -37,6 +40,9 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnSave.setOnClickListener { saveUrl() }
         binding.btnResetDefault.setOnClickListener { resetDefault() }
         binding.btnTestConnection.setOnClickListener { testConnection() }
+        binding.btnPeerSync.setOnClickListener {
+            startActivity(Intent(this, PeerSyncActivity::class.java))
+        }
     }
 
     private fun saveUrl() {
@@ -94,7 +100,7 @@ class SettingsActivity : AppCompatActivity() {
                 val response = ApiClient.getService(this@SettingsActivity).getCategories()
 
                 if (response.isSuccessful && response.body() != null) {
-                    val count = response.body()!!.size
+                    val count = ApiParser.parseList(response.body()!!).size
                     if (count > 0) {
                         showTestResult(
                             getString(R.string.test_success_with_count, count),
