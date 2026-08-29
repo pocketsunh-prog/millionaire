@@ -6,6 +6,7 @@ A fully-featured "Who Wants to Be a Millionaire" trivia game built with Node.js,
 
 - **3D Background** - Immersive Three.js animated stage with rotating rings, particle effects, and star field
 - **100 Questions** - Across 8 categories: Science, History, Geography, Entertainment, Sports, Technology, Literature, General Knowledge
+- **15-Question Games** - Each game randomly selects 15 questions from the chosen category (or the full bank for Mixed), so no two games play the same way
 - **Category Selection** - Play with mixed categories or focus on one
 - **3 Lifelines** - 50:50, Ask the Audience, Phone a Friend
 - **Prize Ladder** - $100 to $1,000,000 with safety nets at $1,000 and $32,000
@@ -39,7 +40,7 @@ npm install
 npm run seed
 ```
 
-This inserts 100 questions across 8 categories into the database.
+This inserts 100 questions across 8 categories into the full question bank. Each game then randomly draws 15 questions from this bank.
 
 ### 3. Start the Server
 
@@ -106,7 +107,7 @@ Once promoted, a **⚙️ ADMIN** button appears on the main menu. The admin pan
 | GET | `/api/auth/me` | Get current user info |
 | PUT | `/api/auth/avatar` | Update user avatar |
 | GET | `/api/categories` | List all categories |
-| GET | `/api/game/start?category=X` | Start a game session with random questions |
+| GET | `/api/game/start?category=X` | Start a game session with 15 random questions |
 | GET | `/api/questions?category=X&difficulty=X` | Get questions with filters |
 | GET | `/api/leaderboard?type=score\|wins` | Get top players |
 | GET | `/api/leaderboard/history` | Get personal game history |

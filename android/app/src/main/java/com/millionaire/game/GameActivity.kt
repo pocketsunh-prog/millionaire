@@ -61,7 +61,11 @@ class GameActivity : AppCompatActivity() {
 
     private fun loadQuestions(categoryId: Int?) {
         binding.progressBar.visibility = View.VISIBLE
+        // Always cap at 15 questions per game, regardless of category.
+        // Mixed (null) and specific categories both draw 15 random questions.
         questions = repository.getQuestions(categoryId = categoryId, limit = 15)
+            .shuffled()
+            .take(15)
         binding.progressBar.visibility = View.GONE
 
         if (questions.isEmpty()) {

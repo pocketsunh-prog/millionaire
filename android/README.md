@@ -95,6 +95,12 @@ Output: `app/build/outputs/apk/debug/app-debug.apk`
 
 > **Keep `keystore.properties` and your `.jkeystore` file safe and out of version control** — they are excluded via `.gitignore`. Losing the keystore means you can never update the app on the Play Store.
 
+**Install on device:**
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+adb install app/build/outputs/apk/release/app-release.apk
+```
+
 ## Sync Flow
 
 ```
