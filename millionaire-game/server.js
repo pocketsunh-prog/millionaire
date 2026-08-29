@@ -732,6 +732,224 @@ const upload = multer({
   },
 });
 
+// Configure multer for in-memory image upload (max 10MB each, up to 10 images)
+const uploadImages = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 10 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
+
+// ============ AI PROVIDER CONFIG ============
+// All credentials and URLs are read from environment variables (.env).
+// Two kinds of AI operations are supported:
+//   - "generate"  : the selected provider generates questions from text
+//   - "vision"    : DeepSeek's vision model reads text content OUT of uploaded images
+
+const AI_PROVIDERS = {
+  longcat: {
+    name: 'LongCat',
+    apiKey: process.env.LONGCAT_API_KEY,
+    apiUrl: process.env.LONGCAT_API_URL,   // https://api.longcat.chat/openai
+    model: process.env.LONGCAT_MODEL,       // LongCat-2.0
+    maxTokens: parseInt(process.env.MAX_TOKENS) || 16000,
+  },
+  deepseek: {
+    name: 'DeepSeek',
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    apiUrl: process.env.DEEPSEEK_API_URL,   // https://api.deepseek.com
+    model: process.env.DEEPSEEK_MODEL,       // deepseek-v4-flash
+    maxTokens: parseInt(process.env.MAX_TOKENS) || 16000,
+  },
+};
+
+// Vision model is always DeepSeek's vision model — used to read uploaded images.
+const VISION_CONFIG = {
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiUrl: process.env.DEEPSEEK_API_URL,
+  model: process.env.DEEPSEEK_VISION_MODEL || 'deepseek-v4-flash-vision-exp',
+  maxTokens: parseInt(process.env.DEEPSEEK_VISION_MAX_TOKENS) || 16000,
+};
+
+// Returns the list of providers that have an API key configured.
+// Exposes no secrets — only id, name, and model.
+function getAvailableProviders() {
+  return Object.entries(AI_PROVIDERS)
+    .filter(([_, cfg]) => !!cfg.apiKey)
+    .map(([id, cfg]) => ({ id, name: cfg.name, model: cfg.model }));
+}
+
+// ============ AI HELPERS ============
+
+// Calls an OpenAI-compatible chat-completions endpoint.
+async function callChatCompletion(config, messages, maxTokens) {
+  const res = await fetch(`${config.apiUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.model,
+      messages,
+      max_tokens: maxTokens || config.maxTokens,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`AI API error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if (!content) throw new Error('AI returned an empty response');
+  return content;
+}
+
+// Reads text content out of uploaded images using the DeepSeek vision model.
+// `images` is an array of multer file objects ({ buffer, mimetype }).
+async function readImagesWithVision(images) {
+  if (!images || images.length === 0) return '';
+
+  const content = [
+    {
+      type: 'text',
+      text: 'Extract and return ALL text content from these images. Preserve questions, options, numbering, and structure as accurately as possible. Output clean, well-organized text only — no commentary.',
+    },
+  ];
+
+  for (const img of images) {
+    const base64 = img.buffer.toString('base64');
+    content.push({
+      type: 'image_url',
+      image_url: { url: `data:${img.mimetype};base64,${base64}` },
+    });
+  }
+
+  const text = await callChatCompletion(
+    VISION_CONFIG,
+    [{ role: 'user', content }],
+    VISION_CONFIG.maxTokens
+  );
+  return text.trim();
+}
+
+// Builds the generation prompt and asks the selected provider for questions.
+async function generateQuestions(providerId, description, imageText, categoryName, count) {
+  const config = AI_PROVIDERS[providerId];
+  if (!config) throw new Error('Unknown AI provider');
+
+  const target = count || 5;
+
+  let prompt = `You are a question generator for a "Who Wants to Be a Millionaire" trivia game.\n`;
+  prompt += `Category: ${categoryName}.\n`;
+  if (description) prompt += `Topic / instructions from the author: ${description}.\n`;
+  if (imageText) prompt += `\nContent extracted from the author's images:\n${imageText}\n`;
+  prompt += `\nBased on ALL of the material above, generate exactly ${target} high-quality multiple-choice questions. `;
+  prompt += `Each question must have exactly 4 options (A, B, C, D) with ONE correct answer, `;
+  prompt += `and a difficulty of easy, medium, or hard.\n`;
+  prompt += `Return ONLY a raw JSON array — no markdown, no code fences, no explanation — in this exact format:\n`;
+  prompt += `[{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","difficulty":"easy"}]\n`;
+  prompt += `correct_answer must be A, B, C, or D. difficulty must be easy, medium, or hard.`;
+
+  const raw = await callChatCompletion(config, [{ role: 'user', content: prompt }], config.maxTokens);
+  return parseGeneratedQuestions(raw);
+}
+
+// Extracts and parses a JSON array out of the AI's text response.
+function parseGeneratedQuestions(text) {
+  let jsonStr = text.trim();
+  // Strip markdown code fences if present
+  jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/g, '');
+  // Locate the array within the text
+  const start = jsonStr.indexOf('[');
+  const end = jsonStr.lastIndexOf(']');
+  if (start !== -1 && end !== -1 && end > start) {
+    jsonStr = jsonStr.slice(start, end + 1);
+  }
+  return JSON.parse(jsonStr);
+}
+
+// Validates a single question object. Returns { valid, errors, data }.
+function validateQuestionRow(row, idx) {
+  const question = String(row.question || '').trim();
+  const optionA = String(row.option_a || '').trim();
+  const optionB = String(row.option_b || '').trim();
+  const optionC = String(row.option_c || '').trim();
+  const optionD = String(row.option_d || '').trim();
+  const correctAnswer = String(row.correct_answer || '').trim().toUpperCase();
+  const difficulty = String(row.difficulty || 'medium').trim().toLowerCase();
+
+  const errors = [];
+  if (!question) errors.push('missing question');
+  if (!optionA) errors.push('missing option_a');
+  if (!optionB) errors.push('missing option_b');
+  if (!optionC) errors.push('missing option_c');
+  if (!optionD) errors.push('missing option_d');
+  if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+    errors.push(`invalid correct_answer "${row.correct_answer}" (must be A, B, C, or D)`);
+  }
+  if (!['easy', 'medium', 'hard'].includes(difficulty)) {
+    errors.push(`invalid difficulty "${row.difficulty}" (must be easy, medium, or hard)`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    data: {
+      question,
+      option_a: optionA,
+      option_b: optionB,
+      option_c: optionC,
+      option_d: optionD,
+      correct_answer: correctAnswer,
+      difficulty,
+    },
+  };
+}
+
+// Normalizes a question string for duplicate comparison
+// (case-insensitive, trimmed, collapsed whitespace).
+function normalizeQuestion(text) {
+  return String(text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// Checks a list of questions against the database for the given category.
+// Returns { duplicates, unique } — duplicates are entries whose normalized
+// question text already exists in the DB (or appears earlier in the same batch).
+async function findDuplicates(categoryId, questions) {
+  const dupRows = [];
+
+  // Existing questions in this category
+  const [existing] = await pool.execute(
+    'SELECT question FROM questions WHERE category_id = ?',
+    [categoryId]
+  );
+  const existingSet = new Set(existing.map(r => normalizeQuestion(r.question)));
+
+  const seenInBatch = new Set();
+  const unique = [];
+
+  questions.forEach((q, idx) => {
+    const norm = normalizeQuestion(q.question);
+    if (existingSet.has(norm) || seenInBatch.has(norm)) {
+      dupRows.push({ row: idx + 1, question: q.question.substring(0, 60) });
+    } else {
+      seenInBatch.add(norm);
+      unique.push(q);
+    }
+  });
+
+  return { duplicates: dupRows, unique };
+}
+
 // GET /api/admin/questions/template — serve a blank Excel template for import
 app.get('/api/admin/questions/template', async (req, res) => {
   try {
@@ -837,37 +1055,11 @@ app.post('/api/admin/questions/import', upload.single('file'), async (req, res) 
 
     rows.forEach((row, idx) => {
       const rowNum = idx + 2; // +2 because row 1 is header, 0-indexed
-
-      const question = String(row.question || '').trim();
-      const optionA = String(row.option_a || '').trim();
-      const optionB = String(row.option_b || '').trim();
-      const optionC = String(row.option_c || '').trim();
-      const optionD = String(row.option_d || '').trim();
-      const correctAnswer = String(row.correct_answer || '').trim().toUpperCase();
-      const difficulty = String(row.difficulty || 'medium').trim().toLowerCase();
-
-      const rowErrors = [];
-
-      if (!question) rowErrors.push('missing question');
-      if (!optionA) rowErrors.push('missing option_a');
-      if (!optionB) rowErrors.push('missing option_b');
-      if (!optionC) rowErrors.push('missing option_c');
-      if (!optionD) rowErrors.push('missing option_d');
-      if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) rowErrors.push(`invalid correct_answer "${row.correct_answer}" (must be A, B, C, or D)`);
-      if (!['easy', 'medium', 'hard'].includes(difficulty)) rowErrors.push(`invalid difficulty "${row.difficulty}" (must be easy, medium, or hard)`);
-
-      if (rowErrors.length > 0) {
-        errors.push({ row: rowNum, errors: rowErrors });
+      const result = validateQuestionRow(row, rowNum);
+      if (result.valid) {
+        validQuestions.push(result.data);
       } else {
-        validQuestions.push({
-          question,
-          option_a: optionA,
-          option_b: optionB,
-          option_c: optionC,
-          option_d: optionD,
-          correct_answer: correctAnswer,
-          difficulty,
-        });
+        errors.push({ row: rowNum, errors: result.errors });
       }
     });
 
@@ -966,6 +1158,208 @@ app.delete('/api/admin/questions/:id', async (req, res) => {
     }
 
     res.json({ success: true, deletedId: qId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ ADMIN: AI IMPORT ============
+
+// GET /api/admin/ai-providers — list available AI providers (no secrets exposed)
+app.get('/api/admin/ai-providers', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+    res.json(getAvailableProviders());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/questions/ai-generate — read images with vision, then generate questions
+// multipart/form-data: categoryId, description, provider, images[] (optional)
+app.post('/api/admin/questions/ai-generate', uploadImages.array('images', 10), async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const categoryId = parseInt(req.body.categoryId);
+    const description = (req.body.description || '').trim();
+    const provider = req.body.provider;
+    const count = Math.min(Math.max(parseInt(req.body.count) || 5, 1), 20);
+
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Category is required' });
+    }
+    if (!provider || !AI_PROVIDERS[provider]) {
+      return res.status(400).json({ error: 'A valid AI provider is required' });
+    }
+    if (!description && (!req.files || req.files.length === 0)) {
+      return res.status(400).json({ error: 'Please provide a description or upload at least one image' });
+    }
+
+    // Verify category exists
+    const [catCheck] = await pool.execute('SELECT id, name FROM categories WHERE id = ?', [categoryId]);
+    if (catCheck.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    const categoryName = catCheck[0].name;
+
+    // Step 1: Read text content out of uploaded images using the vision model
+    let imageText = '';
+    if (req.files && req.files.length > 0) {
+      try {
+        imageText = await readImagesWithVision(req.files);
+      } catch (visionErr) {
+        return res.status(502).json({
+          error: `Failed to read images with vision model: ${visionErr.message}`,
+        });
+      }
+    }
+
+    // Step 2: Generate questions using the selected provider
+    let questions;
+    try {
+      questions = await generateQuestions(provider, description, imageText, categoryName, count);
+    } catch (genErr) {
+      return res.status(502).json({
+        error: `AI generation failed: ${genErr.message}`,
+      });
+    }
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(502).json({ error: 'AI did not return any questions' });
+    }
+
+    // Step 3: Validate each generated question
+    const validQuestions = [];
+    const validationErrors = [];
+
+    questions.forEach((q, idx) => {
+      const result = validateQuestionRow(q, idx + 1);
+      if (result.valid) {
+        validQuestions.push(result.data);
+      } else {
+        validationErrors.push({ row: idx + 1, question: String(q.question || '').substring(0, 60), errors: result.errors });
+      }
+    });
+
+    // Step 4: Flag duplicates against existing DB questions so the admin can review them
+    // Mark duplicates against existing DB questions so the admin can review them
+    const duplicates = [];
+    try {
+      const dupResult = await findDuplicates(categoryId, validQuestions);
+      duplicates.push(...dupResult.duplicates);
+      validQuestions.forEach((q, i) => {
+        q.duplicate = dupResult.duplicates.some(d => d.row === i + 1);
+      });
+    } catch (dupErr) {
+      // Non-fatal: if duplicate check fails, proceed without flags
+      console.error('Duplicate check failed:', dupErr.message);
+    }
+
+    res.json({
+      success: true,
+      category: categoryName,
+      categoryId,
+      provider,
+      model: AI_PROVIDERS[provider].model,
+      count,
+      imagesRead: req.files ? req.files.length : 0,
+      imageText,
+      questions: validQuestions,
+      duplicates,
+      validationErrors,
+      totalGenerated: questions.length,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/questions/ai-import — validate and insert AI-generated questions into DB
+// JSON body: { categoryId, questions: [...] }
+app.post('/api/admin/questions/ai-import', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const categoryId = parseInt(req.body.categoryId);
+    const questions = req.body.questions;
+
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Category is required' });
+    }
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'No questions to import' });
+    }
+
+    // Verify category exists
+    const [catCheck] = await pool.execute('SELECT id, name FROM categories WHERE id = ?', [categoryId]);
+    if (catCheck.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    const categoryName = catCheck[0].name;
+
+    // Validate all rows
+    const validQuestions = [];
+    const validationErrors = [];
+
+    questions.forEach((q, idx) => {
+      const result = validateQuestionRow(q, idx + 1);
+      if (result.valid) {
+        validQuestions.push(result.data);
+      } else {
+        validationErrors.push({ row: idx + 1, question: String(q.question || '').substring(0, 60), errors: result.errors });
+      }
+    });
+
+    if (validQuestions.length === 0) {
+      return res.status(400).json({
+        error: 'No valid questions to import',
+        validationErrors,
+      });
+    }
+
+    // Remove duplicates (against the DB and within this batch)
+    const { duplicates, unique: nonDuplicateQuestions } = await findDuplicates(categoryId, validQuestions);
+
+    if (nonDuplicateQuestions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'All questions are duplicates — nothing to import',
+        inserted: 0,
+        skipped: validationErrors.length,
+        duplicates,
+        insertErrors: [],
+        validationErrors,
+      });
+    }
+
+    // Insert non-duplicate questions
+    let insertedCount = 0;
+    const insertErrors = [];
+
+    for (const q of nonDuplicateQuestions) {
+      try {
+        await pool.execute(
+          `INSERT INTO questions (category_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [categoryId, q.question, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer, q.difficulty]
+        );
+        insertedCount++;
+      } catch (insertErr) {
+        insertErrors.push({ question: q.question.substring(0, 50), error: insertErr.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      category: categoryName,
+      totalRows: questions.length,
+      inserted: insertedCount,
+      skipped: validationErrors.length,
+      duplicates,
+      insertErrors,
+      validationErrors,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

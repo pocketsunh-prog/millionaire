@@ -62,20 +62,24 @@ class AdminManager {
     this.setupUserModal();
     this.setupCategoryModal();
     this.setupImportPanel();
+    this.setupAIImportPanel();
     await this.loadStats();
     await this.loadUsers();
     await this.loadCategories();
+    await this.loadAIProviders();
   }
 
   setupTabs() {
+    const panels = ['users-panel', 'categories-panel', 'import-panel', 'ai-import-panel'];
     document.querySelectorAll('.admin-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         this.currentTab = tab.dataset.tab;
-        document.getElementById('users-panel').classList.toggle('hidden', this.currentTab !== 'users');
-        document.getElementById('categories-panel').classList.toggle('hidden', this.currentTab !== 'categories');
-        document.getElementById('import-panel').classList.toggle('hidden', this.currentTab !== 'import');
+        panels.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.toggle('hidden', this.currentTab !== id.replace('-panel', ''));
+        });
       });
     });
   }
@@ -611,6 +615,374 @@ class AdminManager {
     } else {
       insertErrorsDiv.classList.add('hidden');
     }
+  }
+
+  // ---- AI Import ----
+
+  setupAIImportPanel() {
+    // Category & provider dropdowns drive the generate button state
+    document.getElementById('ai-import-category').addEventListener('change', () => this.updateAIGenerateButton());
+    document.getElementById('ai-import-provider').addEventListener('change', () => this.updateAIGenerateButton());
+
+    // Image preview
+    document.getElementById('ai-import-images').addEventListener('change', (e) => this.updateAIImagePreview(e));
+
+    // Generate button
+    document.getElementById('btn-ai-generate').addEventListener('click', () => this.submitAIGenerate());
+
+    // Import-to-DB and clear buttons
+    document.getElementById('btn-ai-import-submit').addEventListener('click', () => this.submitAIImport());
+    document.getElementById('btn-ai-clear').addEventListener('click', () => this.clearAIResults());
+  }
+
+  async loadAIProviders() {
+    try {
+      const providers = await this.apiRequest('/api/admin/ai-providers');
+      this.aiProviders = providers;
+      const select = document.getElementById('ai-import-provider');
+      select.innerHTML = '<option value="">— Select Provider —</option>';
+      providers.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${p.model})`;
+        select.appendChild(opt);
+      });
+      this.populateAICategories();
+    } catch (err) {
+      console.error('Failed to load AI providers:', err);
+    }
+  }
+
+  populateAICategories() {
+    const select = document.getElementById('ai-import-category');
+    select.innerHTML = '<option value="">— Select Category —</option>';
+    this.categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${c.name} (${c.question_count} questions)`;
+      select.appendChild(opt);
+    });
+  }
+
+  updateAIGenerateButton() {
+    const cat = document.getElementById('ai-import-category').value;
+    const prov = document.getElementById('ai-import-provider').value;
+    const hasInput = cat !== '' && prov !== '';
+    document.getElementById('btn-ai-generate').disabled = !hasInput;
+  }
+
+  updateAIImagePreview(e) {
+    const preview = document.getElementById('ai-image-preview');
+    preview.innerHTML = '';
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+      const wrap = document.createElement('div');
+      wrap.className = 'ai-image-thumb';
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.onload = () => URL.revokeObjectURL(img.src);
+
+      const label = document.createElement('span');
+      label.className = 'ai-image-thumb-label';
+      label.textContent = file.name;
+
+      wrap.appendChild(img);
+      wrap.appendChild(label);
+      preview.appendChild(wrap);
+    });
+  }
+
+  async submitAIGenerate() {
+    const categorySelect = document.getElementById('ai-import-category');
+    const providerSelect = document.getElementById('ai-import-provider');
+    const countInput = document.getElementById('ai-import-count');
+    const descInput = document.getElementById('ai-import-description');
+    const fileInput = document.getElementById('ai-import-images');
+    const generateBtn = document.getElementById('btn-ai-generate');
+    const hint = document.getElementById('ai-generate-hint');
+
+    const categoryId = categorySelect.value;
+    const provider = providerSelect.value;
+    const count = Math.min(Math.max(parseInt(countInput.value) || 5, 1), 20);
+    countInput.value = count;
+    if (!categoryId || !provider) return;
+
+    // Hide previous results
+    document.getElementById('ai-results').classList.add('hidden');
+    document.getElementById('ai-import-results').classList.add('hidden');
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = '⏳ Generating...';
+    hint.textContent = fileInput.files.length > 0 ? `Reading ${fileInput.files.length} image(s) with DeepSeek Vision...` : 'Generating questions...';
+
+    try {
+      const formData = new FormData();
+      formData.append('categoryId', categoryId);
+      formData.append('provider', provider);
+      formData.append('count', count);
+      formData.append('description', descInput.value.trim());
+      Array.from(fileInput.files).forEach(f => formData.append('images', f));
+
+      const headers = {};
+      if (window.authManager.token) {
+        headers['Authorization'] = `Bearer ${window.authManager.token}`;
+      }
+
+      const res = await fetch('/api/admin/questions/ai-generate', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Generation failed');
+      }
+
+      this.aiGeneratedData = data;
+      this.renderAIGeneratedQuestions(data);
+      this.showAdminMessage(
+        `AI generated ${data.questions.length} valid question(s) for "${data.category}"`,
+        'success'
+      );
+    } catch (err) {
+      this.showAdminMessage(err.message, 'error');
+    } finally {
+      generateBtn.textContent = '✨ Generate Questions';
+      this.updateAIGenerateButton();
+      hint.textContent = '';
+    }
+  }
+
+  renderAIGeneratedQuestions(data) {
+    const resultsDiv = document.getElementById('ai-results');
+    const tbody = document.getElementById('ai-questions-tbody');
+    const info = document.getElementById('ai-results-info');
+    const validationDiv = document.getElementById('ai-validation-errors');
+    const validationList = document.getElementById('ai-validation-errors-list');
+
+    resultsDiv.classList.remove('hidden');
+    window.location.hash = '#ai-results';
+
+    const providerName = (this.aiProviders.find(p => p.id === data.provider) || {}).name || data.provider;
+    info.textContent = `${data.questions.length} of ${data.totalGenerated} valid · ${providerName} (${data.model})${data.imagesRead ? ` · read ${data.imagesRead} image(s)` : ''}`;
+
+    // Duplicate warning banner (placed above the table)
+    let dupBanner = document.getElementById('ai-duplicate-banner');
+    if (!dupBanner) {
+      dupBanner = document.createElement('div');
+      dupBanner.id = 'ai-duplicate-banner';
+      dupBanner.className = 'ai-duplicate-banner';
+      resultsDiv.insertBefore(dupBanner, document.querySelector('#ai-results .table-wrapper'));
+    }
+    if (data.duplicates && data.duplicates.length > 0) {
+      dupBanner.innerHTML = `⚠️ ${data.duplicates.length} question(s) already exist in this category and will be skipped on import. Duplicate rows are highlighted below.`;
+      dupBanner.classList.remove('hidden');
+    } else {
+      dupBanner.classList.add('hidden');
+    }
+
+    if (data.questions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="loading-cell">No valid questions were generated. Try a different description or provider.</td></tr>';
+    } else {
+      tbody.innerHTML = data.questions.map((q, i) => `
+        <tr data-ai-index="${i}"${q.duplicate ? ' class="ai-duplicate-row"' : ''}>
+          <td class="cell-index">${i + 1}${q.duplicate ? ' <span class="ai-dup-tag">DUP</span>' : ''}</td>
+          <td><input type="text" class="ai-question-input" value="${this.escapeHtml(q.question)}" data-field="question"></td>
+          <td><input type="text" class="ai-option-input" value="${this.escapeHtml(q.option_a)}" data-field="option_a"></td>
+          <td><input type="text" class="ai-option-input" value="${this.escapeHtml(q.option_b)}" data-field="option_b"></td>
+          <td><input type="text" class="ai-option-input" value="${this.escapeHtml(q.option_c)}" data-field="option_c"></td>
+          <td><input type="text" class="ai-option-input" value="${this.escapeHtml(q.option_d)}" data-field="option_d"></td>
+          <td>
+            <select class="ai-correct-select" data-field="correct_answer">
+              <option value="A" ${q.correct_answer === 'A' ? 'selected' : ''}>A</option>
+              <option value="B" ${q.correct_answer === 'B' ? 'selected' : ''}>B</option>
+              <option value="C" ${q.correct_answer === 'C' ? 'selected' : ''}>C</option>
+              <option value="D" ${q.correct_answer === 'D' ? 'selected' : ''}>D</option>
+            </select>
+          </td>
+          <td>
+            <select class="ai-diff-select" data-field="difficulty">
+              <option value="easy" ${q.difficulty === 'easy' ? 'selected' : ''}>easy</option>
+              <option value="medium" ${q.difficulty === 'medium' ? 'selected' : ''}>medium</option>
+              <option value="hard" ${q.difficulty === 'hard' ? 'selected' : ''}>hard</option>
+            </select>
+          </td>
+          <td><button class="action-btn ai-remove-btn" data-ai-index="${i}" title="Remove">✕</button></td>
+        </tr>
+      `).join('');
+
+      // Bind live editing into the data model
+      tbody.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('change', () => {
+          const idx = parseInt(el.closest('tr').dataset.aiIndex);
+          if (this.aiGeneratedData.questions[idx]) {
+            this.aiGeneratedData.questions[idx][el.dataset.field] = el.value;
+          }
+        });
+      });
+
+      // Bind remove buttons
+      tbody.querySelectorAll('.ai-remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.aiIndex);
+          this.aiGeneratedData.questions.splice(idx, 1);
+          this.renderAIGeneratedQuestions(this.aiGeneratedData);
+        });
+      });
+    }
+
+    // Validation errors (questions the AI produced but that failed validation)
+    if (data.validationErrors && data.validationErrors.length > 0) {
+      validationDiv.classList.remove('hidden');
+      validationList.innerHTML = data.validationErrors.map(e =>
+        `<div class="import-error-item">
+          <strong>Question ${e.row}:</strong> "${this.escapeHtml(e.question)}" — ${this.escapeHtml(e.errors.join(', '))}
+        </div>`
+      ).join('');
+    } else {
+      validationDiv.classList.add('hidden');
+    }
+  }
+
+  async submitAIImport() {
+    if (!this.aiGeneratedData || this.aiGeneratedData.questions.length === 0) {
+      this.showAdminMessage('No questions to import. Generate some first.', 'error');
+      return;
+    }
+
+    const importBtn = document.getElementById('btn-ai-import-submit');
+    importBtn.disabled = true;
+    importBtn.textContent = '⏳ Importing...';
+
+    try {
+      const data = await this.apiRequest('/api/admin/questions/ai-import', {
+        method: 'POST',
+        body: JSON.stringify({
+          categoryId: this.aiGeneratedData.categoryId,
+          questions: this.aiGeneratedData.questions,
+        }),
+      });
+
+      this.showAIImportResults(data);
+      this.showAdminMessage(
+        `Successfully imported ${data.inserted} question(s) to "${data.category}"`,
+        'success'
+      );
+
+      // Refresh stats and categories (question counts changed)
+      await this.loadStats();
+      await this.loadCategories();
+      this.populateAICategories();
+      this.populateImportCategories();
+    } catch (err) {
+      this.showAdminMessage(err.message, 'error');
+    } finally {
+      importBtn.textContent = '📤 Import to Database';
+      this.updateAIGenerateButton();
+    }
+  }
+
+  showAIImportResults(data) {
+    const resultsDiv = document.getElementById('ai-import-results');
+    const summaryDiv = document.getElementById('ai-import-results-summary');
+    const validationDiv = document.getElementById('ai-import-validation-errors');
+    const validationList = document.getElementById('ai-import-validation-errors-list');
+    const insertDiv = document.getElementById('ai-import-insert-errors');
+    const insertList = document.getElementById('ai-import-insert-errors-list');
+
+    resultsDiv.classList.remove('hidden');
+
+    const dupCount = data.duplicates ? data.duplicates.length : 0;
+    const allSuccess = data.skipped === 0 && data.insertErrors.length === 0 && dupCount === 0;
+    summaryDiv.innerHTML = `
+      <div class="import-summary-grid">
+        <div class="import-summary-item success">
+          <span class="import-summary-value">${data.inserted}</span>
+          <span class="import-summary-label">Imported</span>
+        </div>
+        <div class="import-summary-item ${data.skipped > 0 ? 'warning' : 'success'}">
+          <span class="import-summary-value">${data.skipped}</span>
+          <span class="import-summary-label">Skipped</span>
+        </div>
+        <div class="import-summary-item ${dupCount > 0 ? 'duplicate' : ''}">
+          <span class="import-summary-value">${dupCount}</span>
+          <span class="import-summary-label">Duplicates</span>
+        </div>
+        <div class="import-summary-item">
+          <span class="import-summary-value">${data.totalRows}</span>
+          <span class="import-summary-label">Total</span>
+        </div>
+        <div class="import-summary-item">
+          <span class="import-summary-value">${this.escapeHtml(data.category)}</span>
+          <span class="import-summary-label">Category</span>
+        </div>
+      </div>
+      ${allSuccess ? '<p class="import-success-msg">✅ All questions imported successfully!</p>' : ''}
+    `;
+
+    // Duplicates section
+    let dupDiv = document.getElementById('ai-import-duplicates');
+    if (dupCount > 0) {
+      if (!dupDiv) {
+        dupDiv = document.createElement('div');
+        dupDiv.id = 'ai-import-duplicates';
+        dupDiv.className = 'import-results-errors';
+        resultsDiv.appendChild(dupDiv);
+      }
+      dupDiv.classList.remove('hidden');
+      dupDiv.innerHTML = `
+        <h4>🔁 Duplicates Skipped</h4>
+        <div class="import-errors-list">
+          ${data.duplicates.map(e =>
+            `<div class="import-error-item duplicate">
+              <strong>Question ${e.row}:</strong> "${this.escapeHtml(e.question)}"
+            </div>`
+          ).join('')}
+        </div>`;
+    } else if (dupDiv) {
+      dupDiv.classList.add('hidden');
+    }
+
+    if (data.validationErrors && data.validationErrors.length > 0) {
+      validationDiv.classList.remove('hidden');
+      validationList.innerHTML = data.validationErrors.map(e =>
+        `<div class="import-error-item">
+          <strong>Question ${e.row}:</strong> "${this.escapeHtml(e.question)}" — ${this.escapeHtml(e.errors.join(', '))}
+        </div>`
+      ).join('');
+    } else {
+      validationDiv.classList.add('hidden');
+    }
+
+    if (data.insertErrors && data.insertErrors.length > 0) {
+      insertDiv.classList.remove('hidden');
+      insertList.innerHTML = data.insertErrors.map(e =>
+        `<div class="import-error-item">
+          <strong>"${this.escapeHtml(e.question)}...":</strong> ${this.escapeHtml(e.error)}
+        </div>`
+      ).join('');
+    } else {
+      insertDiv.classList.add('hidden');
+    }
+  }
+
+  clearAIResults() {
+    this.aiGeneratedData = null;
+    document.getElementById('ai-results').classList.add('hidden');
+    document.getElementById('ai-import-results').classList.add('hidden');
+    document.getElementById('ai-questions-tbody').innerHTML = '';
+    document.getElementById('ai-image-preview').innerHTML = '';
+    document.getElementById('ai-import-images').value = '';
+    document.getElementById('ai-import-description').value = '';
+    const dupBanner = document.getElementById('ai-duplicate-banner');
+    if (dupBanner) dupBanner.classList.add('hidden');
+    const dupDiv = document.getElementById('ai-import-duplicates');
+    if (dupDiv) dupDiv.classList.add('hidden');
   }
 
   // ---- Utilities ----

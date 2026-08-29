@@ -317,6 +317,7 @@
             <button class="admin-tab active" data-tab="users">👥 Users</button>
             <button class="admin-tab" data-tab="categories">📁 Categories</button>
             <button class="admin-tab" data-tab="import">📥 Import Questions</button>
+            <button class="admin-tab" data-tab="ai-import">🤖 AI Import</button>
           </div>
 
           <!-- Users Panel -->
@@ -411,6 +412,100 @@
                 <div id="import-results-insert-errors" class="import-results-errors hidden">
                   <h4>❌ Insert Errors</h4>
                   <div id="insert-errors-list" class="import-errors-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Import Questions Panel -->
+          <div id="ai-import-panel" class="admin-panel hidden">
+            <div class="import-container">
+              <!-- Step 1: Configuration -->
+              <div class="import-step">
+                <h3>🤖 AI Question Generator</h3>
+                <p class="ai-intro">Select a category, describe what you need, optionally upload images, and choose an AI provider. The AI will generate multiple-choice questions and import them into the database.</p>
+                <div class="import-form-row">
+                  <div class="input-group">
+                    <label for="ai-import-category">Category *</label>
+                    <select id="ai-import-category" required>
+                      <option value="">— Select Category —</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label for="ai-import-provider">AI Provider *</label>
+                    <select id="ai-import-provider" required>
+                      <option value="">— Select Provider —</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label for="ai-import-count">Questions to Generate *</label>
+                    <input type="number" id="ai-import-count" min="1" max="20" value="5" required>
+                    <span class="input-hint">How many questions you want the AI to create (1–20).</span>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="ai-import-description">Description / Topic</label>
+                  <textarea id="ai-import-description" rows="3" placeholder="E.g. Generate medium-difficulty questions about photosynthesis for high school biology students."></textarea>
+                  <span class="input-hint">Describe the topic, difficulty, or any special instructions for the AI.</span>
+                </div>
+                <div class="input-group">
+                  <label for="ai-import-images">Upload Images (optional, multiple)</label>
+                  <input type="file" id="ai-import-images" accept="image/*" multiple>
+                  <span class="input-hint">Images are read using DeepSeek Vision (deepseek-v4-flash-vision-exp) and used as source material. Max 10 images, 10MB each.</span>
+                </div>
+                <div id="ai-image-preview" class="ai-image-preview"></div>
+                <div class="import-actions">
+                  <button id="btn-ai-generate" class="menu-btn small-btn" disabled>✨ Generate Questions</button>
+                  <span id="ai-generate-hint" class="import-file-name"></span>
+                </div>
+              </div>
+
+              <!-- Step 2: Generated questions preview -->
+              <div id="ai-results" class="import-results hidden">
+                <div class="ai-results-header">
+                  <h3>📝 Generated Questions</h3>
+                  <span id="ai-results-info" class="ai-results-info"></span>
+                </div>
+                <p class="ai-review-hint">Review and edit the generated questions below. Remove any you don't want, then import them.</p>
+                <div class="table-wrapper">
+                  <table class="admin-table ai-questions-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Question</th>
+                        <th>A</th>
+                        <th>B</th>
+                        <th>C</th>
+                        <th>D</th>
+                        <th>Correct</th>
+                        <th>Difficulty</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="ai-questions-tbody"></tbody>
+                  </table>
+                </div>
+                <div id="ai-validation-errors" class="import-results-errors hidden">
+                  <h4>⚠️ Some generated questions were invalid</h4>
+                  <div id="ai-validation-errors-list" class="import-errors-list"></div>
+                </div>
+                <div class="import-actions">
+                  <button id="btn-ai-import-submit" class="menu-btn small-btn">📤 Import to Database</button>
+                  <button id="btn-ai-clear" class="menu-btn small-btn cancel-btn">Clear</button>
+                </div>
+              </div>
+
+              <!-- Step 3: Import results -->
+              <div id="ai-import-results" class="import-results hidden">
+                <h3>📊 Import Results</h3>
+                <div id="ai-import-results-summary" class="import-results-summary"></div>
+                <div id="ai-import-validation-errors" class="import-results-errors hidden">
+                  <h4>⚠️ Validation Errors</h4>
+                  <div id="ai-import-validation-errors-list" class="import-errors-list"></div>
+                </div>
+                <div id="ai-import-insert-errors" class="import-results-errors hidden">
+                  <h4>❌ Insert Errors</h4>
+                  <div id="ai-import-insert-errors-list" class="import-errors-list"></div>
                 </div>
               </div>
             </div>
