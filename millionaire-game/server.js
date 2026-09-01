@@ -1184,7 +1184,7 @@ app.post('/api/admin/questions/ai-generate', uploadImages.array('images', 10), a
     const categoryId = parseInt(req.body.categoryId);
     const description = (req.body.description || '').trim();
     const provider = req.body.provider;
-    const count = Math.min(Math.max(parseInt(req.body.count) || 5, 1), 20);
+    const count = Math.min(Math.max(parseInt(req.body.count) || 5, 1), 999);
 
     if (!categoryId) {
       return res.status(400).json({ error: 'Category is required' });
@@ -1242,17 +1242,16 @@ app.post('/api/admin/questions/ai-generate', uploadImages.array('images', 10), a
       }
     });
 
-    // Step 4: Flag duplicates against existing DB questions so the admin can review them
-    // Mark duplicates against existing DB questions so the admin can review them
+    // Step 4: Auto-remove duplicates against existing DB questions and within the batch
     const duplicates = [];
     try {
       const dupResult = await findDuplicates(categoryId, validQuestions);
       duplicates.push(...dupResult.duplicates);
-      validQuestions.forEach((q, i) => {
-        q.duplicate = dupResult.duplicates.some(d => d.row === i + 1);
-      });
+      // Replace validQuestions with the de-duplicated list so duplicates are excluded
+      validQuestions.length = 0;
+      validQuestions.push(...dupResult.unique);
     } catch (dupErr) {
-      // Non-fatal: if duplicate check fails, proceed without flags
+      // Non-fatal: if duplicate check fails, proceed without de-duplication
       console.error('Duplicate check failed:', dupErr.message);
     }
 

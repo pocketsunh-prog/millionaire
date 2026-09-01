@@ -706,7 +706,7 @@ class AdminManager {
 
     const categoryId = categorySelect.value;
     const provider = providerSelect.value;
-    const count = Math.min(Math.max(parseInt(countInput.value) || 5, 1), 20);
+    const count = Math.min(Math.max(parseInt(countInput.value) || 5, 1), 999);
     countInput.value = count;
     if (!categoryId || !provider) return;
 
@@ -769,7 +769,8 @@ class AdminManager {
     window.location.hash = '#ai-results';
 
     const providerName = (this.aiProviders.find(p => p.id === data.provider) || {}).name || data.provider;
-    info.textContent = `${data.questions.length} of ${data.totalGenerated} valid · ${providerName} (${data.model})${data.imagesRead ? ` · read ${data.imagesRead} image(s)` : ''}`;
+    const dupCount = (data.duplicates && data.duplicates.length) || 0;
+    info.textContent = `${data.questions.length} of ${data.totalGenerated} valid · ${providerName} (${data.model})${data.imagesRead ? ` · read ${data.imagesRead} image(s)` : ''}${dupCount ? ` · ${dupCount} duplicate(s) removed` : ''}`;
 
     // Duplicate warning banner (placed above the table)
     let dupBanner = document.getElementById('ai-duplicate-banner');
@@ -780,7 +781,7 @@ class AdminManager {
       resultsDiv.insertBefore(dupBanner, document.querySelector('#ai-results .table-wrapper'));
     }
     if (data.duplicates && data.duplicates.length > 0) {
-      dupBanner.innerHTML = `⚠️ ${data.duplicates.length} question(s) already exist in this category and will be skipped on import. Duplicate rows are highlighted below.`;
+      dupBanner.innerHTML = `⚠️ ${data.duplicates.length} duplicate question(s) were automatically removed (already exist in this category or repeated in the batch).`;
       dupBanner.classList.remove('hidden');
     } else {
       dupBanner.classList.add('hidden');
