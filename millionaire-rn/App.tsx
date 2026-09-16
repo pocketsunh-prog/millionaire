@@ -9,6 +9,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CategoryScreen from './src/screens/CategoryScreen';
+import MixCategoryScreen from './src/screens/MixCategoryScreen';
 import GameScreen from './src/screens/GameScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import LeaderboardScreen from './src/screens/LeaderboardScreen';
@@ -64,6 +65,11 @@ function Navigator() {
             name="Category"
             component={CategoryScreen}
             options={{title: 'Select Category'}}
+          />
+          <Stack.Screen
+            name="MixCategory"
+            component={MixCategoryScreen}
+            options={{title: 'Mix Categories'}}
           />
           <Stack.Screen
             name="Game"

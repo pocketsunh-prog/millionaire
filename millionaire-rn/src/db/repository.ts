@@ -30,9 +30,10 @@ export async function replaceBank(
     ['DELETE FROM categories', []],
   ];
   for (const c of categories) {
+    const isEnabled = c.enabled === false ? 0 : 1;
     commands.push([
-      'INSERT INTO categories (id, name, description) VALUES (?, ?, ?)',
-      [c.id, c.name, c.description ?? null],
+      'INSERT INTO categories (id, name, description, enabled) VALUES (?, ?, ?, ?)',
+      [c.id, c.name, c.description ?? null, isEnabled],
     ]);
   }
   for (const q of questions) {
@@ -69,13 +70,22 @@ export function getLastSync(): string | null {
 
 export function getLocalCategories(): Category[] {
   const res = getDb().executeSync(
-    'SELECT id, name, description FROM categories ORDER BY name',
+    'SELECT id, name, description, enabled FROM categories ORDER BY name',
   );
   return res.rows.map(r => ({
     id: Number(r.id),
     name: String(r.name),
     description: r.description ? String(r.description) : null,
+    enabled: Number(r.enabled ?? 1) === 1,
   }));
+}
+
+export function getQuestionCountByCategory(categoryId: number): number {
+  const row = getDb().executeSync(
+    'SELECT COUNT(*) AS n FROM questions WHERE category_id = ?',
+    [String(categoryId)],
+  ).rows[0];
+  return Number(row?.n ?? 0);
 }
 
 export function getLocalStats(): {categories: number; questions: number} {
@@ -111,6 +121,34 @@ export function getLocalQuestions(category?: string): LocalQuestion[] {
   }
   sql += ' ORDER BY RANDOM() LIMIT 15';
   const res = getDb().executeSync(sql, params);
+  return res.rows.map(r => ({
+    id: Number(r.id),
+    question: String(r.question),
+    options: {
+      A: String(r.option_a),
+      B: String(r.option_b),
+      C: String(r.option_c),
+      D: String(r.option_d),
+    },
+    correct_answer: String(r.correct_answer) as 'A' | 'B' | 'C' | 'D',
+    difficulty: String(r.difficulty ?? 'medium'),
+    category: String(r.category_name ?? 'mixed'),
+  }));
+}
+
+/** 15 random questions drawn from the given category IDs (multi-category mix). */
+export function getLocalQuestionsByIds(ids: number[]): LocalQuestion[] {
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const sql = `
+    SELECT id, question, option_a, option_b, option_c, option_d,
+           correct_answer, difficulty, category_name
+    FROM questions
+    WHERE category_id IN (${placeholders})
+    ORDER BY RANDOM()
+    LIMIT 15
+  `;
+  const res = getDb().executeSync(sql, ids.map(String));
   return res.rows.map(r => ({
     id: Number(r.id),
     question: String(r.question),

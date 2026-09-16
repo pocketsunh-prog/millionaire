@@ -10,7 +10,7 @@ import {
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {startGame} from '../api/game';
 import {saveResultOfflineSafe} from '../db/sync';
-import {getLocalQuestions} from '../db/repository';
+import {getLocalQuestions, getLocalQuestionsByIds} from '../db/repository';
 import {isOnline} from '../net';
 import {useAuth} from '../context/AuthContext';
 import {AudiencePoll} from '../components/AudiencePoll';
@@ -40,7 +40,7 @@ function walkPrize(answered: number): number {
 type LifelineKey = '5050' | 'audience' | 'phone';
 
 export default function GameScreen({route, navigation}: Props) {
-  const {category} = route.params;
+  const {category, mixCategoryIds} = route.params;
   const {user} = useAuth();
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -79,7 +79,7 @@ export default function GameScreen({route, navigation}: Props) {
       if (!(await isOnline())) {
         throw new Error('offline');
       }
-      const data = await startGame(category);
+      const data = await startGame(category, mixCategoryIds);
       if (!data.questions.length) {
         throw new Error('No questions available for this category yet.');
       }
@@ -87,7 +87,9 @@ export default function GameScreen({route, navigation}: Props) {
       setOffline(false);
     } catch {
       // Offline or unreachable → fall back to the local SQLite bank.
-      const local = getLocalQuestions(category);
+      const local = mixCategoryIds && mixCategoryIds.length > 0
+        ? getLocalQuestionsByIds(mixCategoryIds)
+        : getLocalQuestions(category);
       if (local.length > 0) {
         setQuestions(local);
         setOffline(true);
@@ -99,7 +101,7 @@ export default function GameScreen({route, navigation}: Props) {
     } finally {
       setLoading(false);
     }
-  }, [category]);
+  }, [category, mixCategoryIds]);
 
   useEffect(() => {
     load();

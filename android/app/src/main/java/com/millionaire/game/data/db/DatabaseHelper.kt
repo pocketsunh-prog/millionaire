@@ -16,7 +16,7 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
 
     companion object {
         private const val DATABASE_NAME = "millionaire.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
 
         private const val TABLE_CATEGORIES = "categories"
         private const val TABLE_QUESTIONS = "questions"
@@ -33,7 +33,8 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
             CREATE TABLE $TABLE_CATEGORIES (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                description TEXT
+                description TEXT,
+                enabled INTEGER NOT NULL DEFAULT 1
             )
         """)
 
@@ -77,11 +78,10 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_CATEGORIES")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_QUESTIONS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_GAME_SESSIONS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_SYNC_META")
-        onCreate(db)
+        if (oldVersion < 2) {
+            // Add enabled column (default 1 = enabled). Existing rows keep playing.
+            db.execSQL("ALTER TABLE $TABLE_CATEGORIES ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1")
+        }
     }
 
     fun clearAllData() {
@@ -97,10 +97,16 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
         db.beginTransaction()
         try {
             for (cat in categories) {
+                // Preserve the enabled flag across syncs: read the current value
+                // before overwriting so a locally/toggled disable isn't lost.
+                val enabledValue = getCategoryEnabled(cat.id)
                 val values = ContentValues().apply {
                     put("id", cat.id)
                     put("name", cat.name)
                     put("description", cat.description)
+                    // Use the incoming enabled unless we already have a stored
+                    // override, in which case keep it.
+                    put("enabled", if (enabledValue != null) enabledValue else if (cat.enabled) 1 else 0)
                 }
                 db.insertWithOnConflict(TABLE_CATEGORIES, null, values, SQLiteDatabase.CONFLICT_REPLACE)
                 count++
@@ -142,17 +148,79 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
     fun getCategories(): List<Category> {
         val categories = mutableListOf<Category>()
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT id, name, description FROM $TABLE_CATEGORIES ORDER BY name", null)
+        val cursor = db.rawQuery("SELECT id, name, description, enabled FROM $TABLE_CATEGORIES ORDER BY name", null)
         cursor.use {
             while (it.moveToNext()) {
                 categories.add(Category(
                     id = it.getInt(0),
                     name = it.getString(1),
-                    description = it.getString(2) ?: ""
+                    description = it.getString(2) ?: "",
+                    enabled = it.getInt(3) != 0
                 ))
             }
         }
         return categories
+    }
+
+    fun getCategoryEnabled(categoryId: Int): Int? {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT enabled FROM $TABLE_CATEGORIES WHERE id = ?",
+            arrayOf(categoryId.toString())
+        )
+        cursor.use {
+            if (it.moveToFirst()) return it.getInt(0)
+        }
+        return null
+    }
+
+    fun setCategoryEnabled(categoryId: Int, enabled: Boolean) {
+        val db = writableDatabase
+        val values = ContentValues().apply { put("enabled", if (enabled) 1 else 0) }
+        db.update(TABLE_CATEGORIES, values, "id = ?", arrayOf(categoryId.toString()))
+    }
+
+    /** 15 random questions drawn from the given category IDs (multi-category mix). */
+    fun getQuestionsForCategories(categoryIds: List<Int>, difficulty: String? = null, limit: Int = 15): List<Question> {
+        if (categoryIds.isEmpty()) return emptyList()
+        val questions = mutableListOf<Question>()
+        val db = readableDatabase
+        val placeholders = categoryIds.joinToString(",") { "?" }
+        val selection = StringBuilder("category_id IN ($placeholders)")
+        val args = categoryIds.map { it.toString() }.toMutableList()
+        if (difficulty != null) {
+            selection.append(" AND difficulty = ?")
+            args.add(difficulty)
+        }
+        val query = "SELECT id, category_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty FROM $TABLE_QUESTIONS" +
+                " WHERE $selection" +
+                " ORDER BY RANDOM() LIMIT $limit"
+        val cursor = db.rawQuery(query, args.toTypedArray())
+        cursor.use {
+            while (it.moveToNext()) {
+                questions.add(Question(
+                    id = it.getInt(0),
+                    categoryId = it.getInt(1),
+                    question = it.getString(2),
+                    optionA = it.getString(3),
+                    optionB = it.getString(4),
+                    optionC = it.getString(5),
+                    optionD = it.getString(6),
+                    correctAnswer = it.getString(7),
+                    difficulty = it.getString(8)
+                ))
+            }
+        }
+        return questions
+    }
+
+    fun getQuestionCountByCategory(categoryId: Int): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_QUESTIONS WHERE category_id = ?", arrayOf(categoryId.toString()))
+        cursor.use {
+            if (it.moveToFirst()) return it.getInt(0)
+        }
+        return 0
     }
 
     fun getQuestions(categoryId: Int? = null, difficulty: String? = null, limit: Int = 15): List<Question> {

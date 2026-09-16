@@ -25,9 +25,16 @@ function migrate(database: DB): void {
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
-      description TEXT
+      description TEXT,
+      enabled INTEGER NOT NULL DEFAULT 1
     )
   `);
+  // Migration: add enabled column if upgrading from a DB that predates it.
+  try {
+    database.executeSync('ALTER TABLE categories ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
+  } catch {
+    // column already exists — ignore
+  }
   database.executeSync(`
     CREATE TABLE IF NOT EXISTS questions (
       id INTEGER PRIMARY KEY,

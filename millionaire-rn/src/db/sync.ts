@@ -1,6 +1,6 @@
 import {api} from '../api/client';
-import {getCategories, saveGame} from '../api/game';
-import type {SaveGamePayload} from '../types';
+import {saveGame} from '../api/game';
+import type {Category, SaveGamePayload} from '../types';
 import {
   getLocalStats,
   getPendingResults,
@@ -24,7 +24,9 @@ export async function syncOfflineData(): Promise<{
   questions: number;
 }> {
   const [categories, questionRows] = await Promise.all([
-    getCategories(),
+    // Sync needs EVERY category (including disabled) so the enabled flag is
+    // stored locally and disabled categories aren't wiped from the local bank.
+    api.get<Category[]>('/api/categories?all=true'),
     api.get<ApiQuestionRow[]>('/api/questions?limit=100000'),
   ]);
 

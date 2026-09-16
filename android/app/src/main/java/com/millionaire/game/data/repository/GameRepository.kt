@@ -49,10 +49,19 @@ class GameRepository(context: Context) {
             val response = api().getCategories()
             if (response.isSuccessful && response.body() != null) {
                 val categories = ApiParser.parseList(response.body()!!).map { map ->
+                    // enabled may arrive as Int (1/0) or Boolean depending on server;
+                    // normalise to Boolean. Default true when absent.
+                    val enabledRaw = map["enabled"]
+                    val enabled = when (enabledRaw) {
+                        is Boolean -> enabledRaw
+                        is Number -> enabledRaw.toInt() != 0
+                        else -> true
+                    }
                     Category(
                         id = (map["id"] as Double).toInt(),
                         name = map["name"] as String,
-                        description = map["description"] as? String ?: ""
+                        description = map["description"] as? String ?: "",
+                        enabled = enabled
                     )
                 }
                 db.insertCategories(categories)
@@ -145,8 +154,20 @@ class GameRepository(context: Context) {
 
     fun getCategories(): List<Category> = db.getCategories()
 
+    fun getEnabledCategories(): List<Category> = getCategories().filter { it.enabled }
+
     fun getQuestions(categoryId: Int? = null, difficulty: String? = null, limit: Int = 15): List<Question> =
         db.getQuestions(categoryId, difficulty, limit)
+
+    /** 15 random questions drawn from the given category IDs (multi-category mix). */
+    fun getQuestionsForCategories(categoryIds: List<Int>, difficulty: String? = null, limit: Int = 15): List<Question> =
+        db.getQuestionsForCategories(categoryIds, difficulty, limit)
+
+    fun getQuestionCountByCategory(categoryId: Int): Int = db.getQuestionCountByCategory(categoryId)
+
+    fun setCategoryEnabled(categoryId: Int, enabled: Boolean) = db.setCategoryEnabled(categoryId, enabled)
+
+    fun getCategoryEnabled(categoryId: Int): Boolean? = db.getCategoryEnabled(categoryId)?.let { it != 0 }
 
     fun isDataAvailable(): Boolean = db.getQuestionCount() > 0
 

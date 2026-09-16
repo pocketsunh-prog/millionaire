@@ -11,13 +11,17 @@ export function getCategories(): Promise<Category[]> {
   return api.get<Category[]>('/api/categories');
 }
 
-export function startGame(category: string): Promise<{
-  questions: Question[];
-  total: number;
-}> {
-  const query = category && category !== 'mixed'
-    ? `?category=${encodeURIComponent(category)}`
-    : '';
+export function startGame(
+  category: string,
+  mixCategoryIds?: number[],
+): Promise<{questions: Question[]; total: number}> {
+  let query = '';
+  if (mixCategoryIds && mixCategoryIds.length > 0) {
+    // Multi-category mix: "1,2,3"
+    query = `?categories=${mixCategoryIds.join(',')}`;
+  } else if (category && category !== 'mixed') {
+    query = `?category=${encodeURIComponent(category)}`;
+  }
   return api.get(`/api/game/start${query}`);
 }
 

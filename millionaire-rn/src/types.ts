@@ -15,6 +15,8 @@ export interface Category {
   name: string;
   description: string | null;
   created_at?: string;
+  enabled?: boolean;
+  question_count?: number;
 }
 
 export interface Question {
@@ -59,7 +61,8 @@ export type RootStackParamList = {
   Register: undefined;
   Home: undefined;
   Category: undefined;
-  Game: { category: string };
+  MixCategory: undefined;
+  Game: { category: string; mixCategoryIds?: number[] };
   Result: {
     title: string;
     amount: number;

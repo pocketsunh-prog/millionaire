@@ -48,10 +48,11 @@ export default function CategoryScreen({navigation}: Props) {
       if (!(await isOnline())) {
         throw new Error('offline');
       }
+      // Server now returns only enabled categories by default.
       setCategories(await getCategories());
     } catch {
-      // Offline → use the locally synced categories if available.
-      const local = getLocalCategories();
+      // Offline → use the locally synced categories (enabled ones only).
+      const local = getLocalCategories().filter(c => c.enabled !== false);
       if (local.length > 0) {
         setCategories(local);
       } else {
@@ -84,11 +85,14 @@ export default function CategoryScreen({navigation}: Props) {
     );
   }
 
+  // Disabled categories are hidden from the chooser.
+  const visible = categories.filter(c => c.enabled !== false);
+
   return (
     <Screen>
       <Text style={styles.title}>CHOOSE A CATEGORY</Text>
       <FlatList
-        data={categories}
+        data={visible}
         keyExtractor={item => String(item.id)}
         contentContainerStyle={styles.list}
         renderItem={({item}) => (
@@ -112,11 +116,11 @@ export default function CategoryScreen({navigation}: Props) {
         ListHeaderComponent={
           <TouchableOpacity
             style={[styles.item, styles.mixed]}
-            onPress={() => navigation.navigate('Game', {category: 'mixed'})}>
+            onPress={() => navigation.navigate('MixCategory')}>
             <Text style={styles.itemEmoji}>🎲</Text>
             <View style={styles.itemTextWrap}>
               <Text style={styles.itemName}>Mixed Categories</Text>
-              <Text style={styles.itemDesc}>Questions from every category</Text>
+              <Text style={styles.itemDesc}>Pick categories to mix</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="←"
+            android:textSize="20sp"
+            android:textColor="@color/gold"
+            android:background="@android:color/transparent" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="🎲 Mix Categories"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/gold"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btnSelectAll"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="All"
+            android:textSize="14sp"
+            android:textColor="@color/gold"
+            android:background="@android:color/transparent" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Pick the categories to mix into one game"
+        android:textSize="13sp"
+        android:textColor="@color/white"
+        android:alpha="0.7"
+        android:gravity="center"
+        android:paddingBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCategories"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp"
+        android:clipToPadding="false" />
+
+    <TextView
+        android:id="@+id/tvFooterInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0 selected · 0 questions available"
+        android:textSize="13sp"
+        android:textColor="@color/white"
+        android:alpha="0.8"
+        android:gravity="center"
+        android:paddingBottom="8dp" />
+
+    <Button
+        android:id="@+id/btnStart"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="▶ START MIXED GAME"
+        android:textSize="16sp"
+        android:textColor="@color/dark_blue"
+        android:background="@drawable/btn_primary"
+        android:layout_margin="16dp" />
+
+</LinearLayout>

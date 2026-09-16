@@ -30,12 +30,13 @@ class CategorySelectActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
         binding.btnMixed.setOnClickListener {
-            startGame(null)
+            startActivity(Intent(this, MixCategoryActivity::class.java))
         }
     }
 
     private fun setupRecyclerView() {
-        val categories = repository.getCategories()
+        // Only enabled categories appear in the chooser.
+        val categories = repository.getEnabledCategories()
         adapter = CategoryAdapter(categories) { category ->
             startGame(category.id)
         }

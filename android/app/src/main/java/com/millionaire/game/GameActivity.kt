@@ -54,18 +54,26 @@ class GameActivity : AppCompatActivity() {
         val categoryId = intent.getIntExtra("category_id", -1).let {
             if (it == -1) null else it
         }
+        val mixedIds = intent.getIntegerArrayListExtra("mixed_category_ids")
 
-        loadQuestions(categoryId)
+        loadQuestions(categoryId, mixedIds)
         setupClickListeners()
     }
 
-    private fun loadQuestions(categoryId: Int?) {
+    private fun loadQuestions(categoryId: Int?, mixedIds: List<Int>?) {
         binding.progressBar.visibility = View.VISIBLE
         // Always cap at 15 questions per game, regardless of category.
         // Mixed (null) and specific categories both draw 15 random questions.
-        questions = repository.getQuestions(categoryId = categoryId, limit = 15)
-            .shuffled()
-            .take(15)
+        // Multi-category mix draws from the chosen category IDs.
+        questions = if (!mixedIds.isNullOrEmpty()) {
+            repository.getQuestionsForCategories(mixedIds, limit = 15)
+                .shuffled()
+                .take(15)
+        } else {
+            repository.getQuestions(categoryId = categoryId, limit = 15)
+                .shuffled()
+                .take(15)
+        }
         binding.progressBar.visibility = View.GONE
 
         if (questions.isEmpty()) {
