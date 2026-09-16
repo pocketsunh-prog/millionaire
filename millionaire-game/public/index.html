@@ -102,6 +102,7 @@
           <select id="category-dropdown">
             <option value="mixed">Mixed (All Categories)</option>
           </select>
+          <button id="btn-mix-categories" class="menu-btn small-btn mix-btn">🎲 Mix Categories</button>
         </div>
       </div>
 
@@ -355,6 +356,7 @@
                     <th>Name</th>
                     <th>Description</th>
                     <th>Questions</th>
+                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -570,12 +572,70 @@
               <label for="category-description">Description</label>
               <textarea id="category-description" maxlength="255" rows="3"></textarea>
             </div>
+            <div class="input-group">
+              <label for="category-enabled">Enabled</label>
+              <select id="category-enabled">
+                <option value="1">Yes — visible in game</option>
+                <option value="0">No — hidden from game</option>
+              </select>
+              <span class="input-hint">Disabled categories won't appear in the category dropdown or mixed games.</span>
+            </div>
             <div id="category-modal-error" class="auth-error"></div>
             <div class="modal-actions">
               <button type="button" id="category-modal-cancel" class="menu-btn cancel-btn">Cancel</button>
               <button type="submit" class="menu-btn">Save</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Edit Questions Modal -->
+      <div id="questions-modal" class="modal hidden">
+        <div class="modal-content modal-content-large">
+          <div class="modal-header">
+            <h3 id="questions-modal-title">Edit Questions</h3>
+            <button id="btn-questions-modal-close" class="modal-close-btn">&times;</button>
+          </div>
+          <div id="questions-modal-info" class="questions-modal-info"></div>
+          <div class="table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Question</th>
+                  <th>A</th>
+                  <th>B</th>
+                  <th>C</th>
+                  <th>D</th>
+                  <th>Correct</th>
+                  <th>Difficulty</th>
+                  <th>Category</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="questions-tbody"></tbody>
+            </table>
+          </div>
+          <div id="questions-modal-error" class="auth-error"></div>
+          <div class="modal-actions">
+            <button type="button" id="questions-modal-cancel" class="menu-btn cancel-btn">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mix Category Modal -->
+      <div id="mix-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>🎲 Mix Categories</h3>
+            <button id="btn-mix-modal-close" class="modal-close-btn">&times;</button>
+          </div>
+          <p class="mix-hint">Pick the categories to mix into one game. Questions are drawn randomly from all selected categories.</p>
+          <div id="mix-category-list" class="mix-category-list"></div>
+          <div class="modal-actions">
+            <button type="button" id="mix-modal-cancel" class="menu-btn cancel-btn">Cancel</button>
+            <button type="button" id="mix-modal-start" class="menu-btn">▶ Start Mixed Game</button>
+          </div>
         </div>
       </div>
     </div>

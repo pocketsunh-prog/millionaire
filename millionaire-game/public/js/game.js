@@ -18,6 +18,8 @@ class MillionaireGame {
     this.isAnswering = false;
     this.playerName = 'Player';
     this.category = 'mixed';
+    this.categories = [];               // cached category list (with id, enabled)
+    this.mixCategoryIds = null;        // comma-separated ids when using custom mix
 
     this.init();
     this.setupUI();
@@ -341,6 +343,15 @@ class MillionaireGame {
     document.getElementById('btn-how-to').addEventListener('click', () => this.showHowTo());
     document.getElementById('btn-admin').addEventListener('click', () => window.adminManager.init());
     document.getElementById('btn-admin-back').addEventListener('click', () => this.showScreen('main-menu'));
+
+    // Mix categories modal
+    document.getElementById('btn-mix-categories').addEventListener('click', () => this.openMixModal());
+    document.getElementById('btn-mix-modal-close').addEventListener('click', () => this.closeMixModal());
+    document.getElementById('mix-modal-cancel').addEventListener('click', () => this.closeMixModal());
+    document.getElementById('mix-modal-start').addEventListener('click', () => this.startMixGame());
+    document.getElementById('mix-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'mix-modal') this.closeMixModal();
+    });
     document.getElementById('btn-play-again').addEventListener('click', () => this.startGame());
     document.getElementById('btn-back-menu').addEventListener('click', () => this.showScreen('main-menu'));
     document.getElementById('btn-lb-back').addEventListener('click', () => this.showScreen('main-menu'));
@@ -444,26 +455,105 @@ class MillionaireGame {
     window.audioManager.playMenuClick();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
+
+    // Keep the category dropdown in sync with enable/disable changes made in the
+    // admin panel — re-fetch (filtering out disabled categories) every time the
+    // main menu is shown.
+    if (screenId === 'main-menu') {
+      this.loadCategories();
+    }
   }
 
   async loadCategories() {
     try {
       const res = await fetch('/api/categories');
       const categories = await res.json();
+      this.categories = categories;
+
       const dropdown = document.getElementById('category-dropdown');
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.name;
-        option.textContent = cat.name;
-        dropdown.appendChild(option);
-      });
+      // Keep the first "Mixed" option, remove the rest
+      dropdown.innerHTML = '<option value="mixed">Mixed (All Categories)</option>';
+
+      // Only enabled categories appear in the dropdown.
+      // MySQL returns enabled as integer 0/1, so use a truthy check (not !== false,
+      // because 0 !== false is true in JS — different types, strict comparison).
+      categories
+        .filter(cat => cat.enabled)
+        .forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.name;
+          option.textContent = cat.name;
+          dropdown.appendChild(option);
+        });
     } catch (err) {
       console.error('Failed to load categories:', err);
     }
   }
 
+  // ---- Mix Category Modal ----
+
+  openMixModal() {
+    const list = document.getElementById('mix-category-list');
+    list.innerHTML = '';
+
+    const enabled = this.categories.filter(cat => cat.enabled);
+
+    if (enabled.length === 0) {
+      list.innerHTML = '<p style="color:#aaa;text-align:center;">No enabled categories available.</p>';
+      return;
+    }
+
+    this._mixSelection = {};
+
+    enabled.forEach(cat => {
+      this._mixSelection[cat.id] = true; // default all selected
+
+      const row = document.createElement('div');
+      row.className = 'mix-cat-item selected';
+      row.dataset.catId = cat.id;
+      row.innerHTML = `
+        <div class="mix-cat-checkbox"></div>
+        <span class="mix-cat-name">${this.escapeHtml(cat.name)}</span>
+        <span class="mix-cat-count">${cat.question_count || 0} Q</span>
+      `;
+      row.addEventListener('click', () => {
+        this._mixSelection[cat.id] = !this._mixSelection[cat.id];
+        row.classList.toggle('selected', this._mixSelection[cat.id]);
+      });
+      list.appendChild(row);
+    });
+
+    document.getElementById('mix-modal').classList.remove('hidden');
+  }
+
+  closeMixModal() {
+    document.getElementById('mix-modal').classList.add('hidden');
+  }
+
+  startMixGame() {
+    if (!this._mixSelection) return;
+    const selectedIds = Object.entries(this._mixSelection)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    if (selectedIds.length === 0) {
+      alert('Please select at least one category.');
+      return;
+    }
+
+    this.closeMixModal();
+    this.mixCategoryIds = selectedIds.join(',');
+    this.category = 'mixed';
+    this.startGame();
+  }
+
   async startGame() {
-    this.category = document.getElementById('category-dropdown').value;
+    // If a custom mix was selected, keep it (it uses ?categories=).
+    // Otherwise read the dropdown normally.
+    if (!this.mixCategoryIds) {
+      this.category = document.getElementById('category-dropdown').value;
+      this.mixCategoryIds = null;
+    }
     this.currentQuestionIndex = 0;
     this.lifelines = { '5050': true, audience: true, phone: true };
     this.selectedAnswer = null;
@@ -484,8 +574,15 @@ class MillionaireGame {
     document.querySelectorAll('.lifeline-btn').forEach(btn => btn.classList.remove('used'));
     document.querySelectorAll('.prize-item').forEach(item => item.classList.remove('active'));
 
+    // Build the request URL — custom mix uses ?categories=, everything else uses ?category=
+    let url;
+    if (this.mixCategoryIds) {
+      url = `/api/game/start?categories=${this.mixCategoryIds}`;
+    } else {
+      url = `/api/game/start?category=${encodeURIComponent(this.category)}`;
+    }
+
     try {
-      const url = `/api/game/start?category=${encodeURIComponent(this.category)}`;
       const res = await fetch(url);
       const data = await res.json();
       this.questions = data.questions;
@@ -868,6 +965,12 @@ class MillionaireGame {
 
   showHowTo() {
     this.showScreen('howto-screen');
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 }
 

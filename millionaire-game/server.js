@@ -193,7 +193,21 @@ app.put('/api/auth/avatar', async (req, res) => {
 
 app.get('/api/categories', async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM categories ORDER BY name');
+    // Include the enabled flag and per-category question counts so clients can
+    // render disable toggles and hide disabled categories from the game.
+    // By default only enabled categories are returned; pass ?all=true to get
+    // every category (used by the admin panel's category dropdowns).
+    const { all } = req.query;
+    const enabledFilter = all ? '' : ' AND c.enabled = 1';
+    const [rows] = await pool.execute(
+      `SELECT c.id, c.name, c.description, c.enabled, c.created_at,
+              COUNT(q.id) as question_count
+       FROM categories c
+       LEFT JOIN questions q ON c.id = q.category_id
+       WHERE 1=1${enabledFilter}
+       GROUP BY c.id, c.name, c.description, c.enabled, c.created_at
+       ORDER BY c.name`
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -255,7 +269,10 @@ app.get('/api/questions/:id', async (req, res) => {
 
 app.get('/api/game/start', async (req, res) => {
   try {
-    const { category } = req.query;
+    // category  = single category name (legacy)
+    // categories = comma-separated list of category IDs (multi-category mix)
+    // mixed / none = all enabled categories
+    const { category, categories } = req.query;
     let query = `
       SELECT q.id, q.category_id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
              q.correct_answer, q.difficulty, c.name as category_name
@@ -263,10 +280,28 @@ app.get('/api/game/start', async (req, res) => {
       JOIN categories c ON q.category_id = c.id
     `;
     const params = [];
+    const where = [];
 
-    if (category && category !== 'mixed') {
-      query += ' WHERE c.name = ?';
+    // Never draw questions from a disabled category.
+    where.push('c.enabled = 1');
+
+    if (categories) {
+      // Multi-category mix: "1,2,3"
+      const ids = String(categories)
+        .split(',')
+        .map(s => parseInt(s.trim()))
+        .filter(n => !isNaN(n));
+      if (ids.length > 0) {
+        where.push(`q.category_id IN (${ids.map(() => '?').join(',')})`);
+        params.push(...ids);
+      }
+    } else if (category && category !== 'mixed') {
+      where.push('c.name = ?');
       params.push(category);
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ');
     }
 
     query += ' ORDER BY RAND() LIMIT 15';
@@ -554,11 +589,11 @@ app.get('/api/admin/categories', async (req, res) => {
     if (!(await requireAdmin(req, res))) return;
 
     const [rows] = await pool.execute(
-      `SELECT c.id, c.name, c.description, c.created_at,
+      `SELECT c.id, c.name, c.description, c.enabled, c.created_at,
               COUNT(q.id) as question_count
        FROM categories c
        LEFT JOIN questions q ON c.id = q.category_id
-       GROUP BY c.id, c.name, c.description, c.created_at
+       GROUP BY c.id, c.name, c.description, c.enabled, c.created_at
        ORDER BY c.name`
     );
     res.json(rows);
@@ -571,7 +606,7 @@ app.post('/api/admin/categories', async (req, res) => {
   try {
     if (!(await requireAdmin(req, res))) return;
 
-    const { name, description } = req.body;
+    const { name, description, enabled } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Category name is required' });
@@ -586,8 +621,8 @@ app.post('/api/admin/categories', async (req, res) => {
     }
 
     const [result] = await pool.execute(
-      'INSERT INTO categories (name, description) VALUES (?, ?)',
-      [name.trim(), description || null]
+      'INSERT INTO categories (name, description, enabled) VALUES (?, ?, ?)',
+      [name.trim(), description || null, enabled === false ? 0 : 1]
     );
 
     const [rows] = await pool.execute(
@@ -609,7 +644,7 @@ app.put('/api/admin/categories/:id', async (req, res) => {
   try {
     if (!(await requireAdmin(req, res))) return;
 
-    const { name, description } = req.body;
+    const { name, description, enabled } = req.body;
     const catId = parseInt(req.params.id);
 
     const [existing] = await pool.execute('SELECT id FROM categories WHERE id = ?', [catId]);
@@ -619,6 +654,11 @@ app.put('/api/admin/categories/:id', async (req, res) => {
 
     const updates = [];
     const params = [];
+
+    if (enabled !== undefined) {
+      updates.push('enabled = ?');
+      params.push(enabled ? 1 : 0)
+    }
 
     if (name !== undefined) {
       if (!name.trim()) {
@@ -1107,7 +1147,11 @@ app.get('/api/admin/questions', async (req, res) => {
     if (!(await requireAdmin(req, res))) return;
 
     const { categoryId, page = 1, limit = 50 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    // Inline LIMIT/OFFSET as integers: binding them as prepared-statement parameters
+    // triggers "Incorrect arguments to mysqld_stmt_execute" on some MySQL/MariaDB
+    // versions. parseInt guarantees integers, so this is safe from injection.
+    const limitInt = parseInt(limit) || 50;
+    const offsetInt = (parseInt(page) - 1) * limitInt;
 
     let whereClause = '';
     const params = [];
@@ -1124,8 +1168,8 @@ app.get('/api/admin/questions', async (req, res) => {
        JOIN categories c ON q.category_id = c.id
        ${whereClause}
        ORDER BY q.id DESC
-       LIMIT ? OFFSET ?`,
-      [...params, parseInt(limit), offset]
+       LIMIT ${limitInt} OFFSET ${offsetInt}`,
+      params
     );
 
     // Get total count
@@ -1158,6 +1202,72 @@ app.delete('/api/admin/questions/:id', async (req, res) => {
     }
 
     res.json({ success: true, deletedId: qId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/admin/questions/:id — update a question (incl. moving it to another category)
+app.put('/api/admin/questions/:id', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    const qId = parseInt(req.params.id);
+    const { category_id, question, option_a, option_b, option_c, option_d, correct_answer, difficulty } = req.body;
+
+    const [existing] = await pool.execute('SELECT id FROM questions WHERE id = ?', [qId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    // Validate category if supplied, and refuse to move into a disabled category-less target.
+    if (category_id !== undefined) {
+      const [cat] = await pool.execute('SELECT id FROM categories WHERE id = ?', [parseInt(category_id)]);
+      if (cat.length === 0) {
+        return res.status(400).json({ error: 'category_id does not exist' });
+      }
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (category_id !== undefined) { updates.push('category_id = ?'); params.push(parseInt(category_id)); }
+    if (question !== undefined) { updates.push('question = ?'); params.push(question); }
+    if (option_a !== undefined) { updates.push('option_a = ?'); params.push(option_a); }
+    if (option_b !== undefined) { updates.push('option_b = ?'); params.push(option_b); }
+    if (option_c !== undefined) { updates.push('option_c = ?'); params.push(option_c); }
+    if (option_d !== undefined) { updates.push('option_d = ?'); params.push(option_d); }
+    if (correct_answer !== undefined) {
+      if (!['A', 'B', 'C', 'D'].includes(correct_answer)) {
+        return res.status(400).json({ error: 'correct_answer must be A, B, C, or D' });
+      }
+      updates.push('correct_answer = ?');
+      params.push(correct_answer);
+    }
+    if (difficulty !== undefined) {
+      if (!['easy', 'medium', 'hard'].includes(difficulty)) {
+        return res.status(400).json({ error: 'difficulty must be easy, medium, or hard' });
+      }
+      updates.push('difficulty = ?');
+      params.push(difficulty);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    params.push(qId);
+    await pool.execute(`UPDATE questions SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    const [rows] = await pool.execute(
+      `SELECT q.id, q.question, q.option_a, q.option_b, q.option_c, q.option_d,
+              q.correct_answer, q.difficulty, q.category_id, c.name as category_name
+       FROM questions q
+       JOIN categories c ON q.category_id = c.id
+       WHERE q.id = ?`,
+      [qId]
+    );
+    res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

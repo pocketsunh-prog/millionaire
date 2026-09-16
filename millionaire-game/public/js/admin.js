@@ -61,6 +61,7 @@ class AdminManager {
     this.setupTabs();
     this.setupUserModal();
     this.setupCategoryModal();
+    this.setupQuestionsModal();
     this.setupImportPanel();
     this.setupAIImportPanel();
     await this.loadStats();
@@ -274,14 +275,14 @@ class AdminManager {
 
   async loadCategories() {
     const tbody = document.getElementById('categories-tbody');
-    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading categories...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading categories...</td></tr>';
 
     try {
       this.categories = await this.apiRequest('/api/admin/categories');
       this.renderCategories();
       this.populateImportCategories();
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="4" class="loading-cell error">Failed to load categories: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="loading-cell error">Failed to load categories: ${err.message}</td></tr>`;
     }
   }
 
@@ -289,22 +290,35 @@ class AdminManager {
     const tbody = document.getElementById('categories-tbody');
 
     if (this.categories.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">No categories found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">No categories found.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = this.categories.map(c => `
-      <tr data-category-id="${c.id}">
+    tbody.innerHTML = this.categories.map(c => {
+      const disabled = c.enabled === 0 || c.enabled === false;
+      return `
+      <tr data-category-id="${c.id}" class="${disabled ? 'category-disabled' : ''}">
         <td class="cell-name">${this.escapeHtml(c.name)}</td>
         <td class="cell-desc">${this.escapeHtml(c.description || '—')}</td>
         <td class="cell-count">${c.question_count} questions</td>
+        <td class="cell-status">
+          <span class="category-status-badge ${disabled ? 'disabled' : 'enabled'}">${disabled ? 'DISABLED' : 'ENABLED'}</span>
+        </td>
         <td class="cell-actions">
+          <button class="action-btn edit-questions-btn" data-category-id="${c.id}" title="Edit Questions">📝</button>
+          <button class="action-btn toggle-enable-btn" data-category-id="${c.id}" title="${disabled ? 'Enable' : 'Disable'}">${disabled ? '✅' : '🚫'}</button>
           <button class="action-btn edit-btn" data-category-id="${c.id}" title="Edit">✏️</button>
           <button class="action-btn delete-btn" data-category-id="${c.id}" title="Delete">🗑️</button>
         </td>
       </tr>
-    `).join('');
+    `}).join('');
 
+    tbody.querySelectorAll('.edit-questions-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.openQuestionsModal(parseInt(btn.dataset.categoryId)));
+    });
+    tbody.querySelectorAll('.toggle-enable-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleCategoryEnabled(parseInt(btn.dataset.categoryId)));
+    });
     tbody.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => this.openCategoryModal(parseInt(btn.dataset.categoryId)));
     });
@@ -336,6 +350,7 @@ class AdminManager {
     if (catId === null) {
       title.textContent = 'Add New Category';
       document.getElementById('category-id').value = '';
+      document.getElementById('category-enabled').value = '1';
     } else {
       const cat = this.categories.find(c => c.id === catId);
       if (!cat) return;
@@ -344,6 +359,7 @@ class AdminManager {
       document.getElementById('category-id').value = cat.id;
       document.getElementById('category-name').value = cat.name;
       document.getElementById('category-description').value = cat.description || '';
+      document.getElementById('category-enabled').value = (cat.enabled === 0 || cat.enabled === false) ? '0' : '1';
     }
 
     modal.classList.remove('hidden');
@@ -362,8 +378,9 @@ class AdminManager {
     const id = document.getElementById('category-id').value;
     const name = document.getElementById('category-name').value.trim();
     const description = document.getElementById('category-description').value.trim();
+    const enabled = document.getElementById('category-enabled').value === '1';
 
-    const body = { name, description };
+    const body = { name, description, enabled };
 
     try {
       if (id) {
@@ -410,6 +427,148 @@ class AdminManager {
       await this.loadStats();
     } catch (err) {
       this.showAdminMessage(err.message, 'error');
+    }
+  }
+
+  async toggleCategoryEnabled(catId) {
+    const cat = this.categories.find(c => c.id === catId);
+    if (!cat) return;
+
+    const currentlyEnabled = cat.enabled !== 0 && cat.enabled !== false;
+    const action = currentlyEnabled ? 'disable' : 'enable';
+
+    if (!confirm(`Are you sure you want to ${action} category "${cat.name}"?\n\n${currentlyEnabled ? 'It will be hidden from the game dropdown and mixed games.' : 'It will be visible in the game again.'}`)) {
+      return;
+    }
+
+    try {
+      await this.apiRequest(`/api/admin/categories/${catId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ enabled: !currentlyEnabled }),
+      });
+      this.showAdminMessage(`Category "${cat.name}" ${action}d successfully`, 'success');
+      await this.loadCategories();
+      await this.loadStats();
+    } catch (err) {
+      this.showAdminMessage(err.message, 'error');
+    }
+  }
+
+  // ---- Edit Questions ----
+
+  setupQuestionsModal() {
+    document.getElementById('btn-questions-modal-close').addEventListener('click', () => this.closeQuestionsModal());
+    document.getElementById('questions-modal-cancel').addEventListener('click', () => this.closeQuestionsModal());
+    document.getElementById('questions-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'questions-modal') this.closeQuestionsModal();
+    });
+  }
+
+  openQuestionsModal(catId) {
+    const cat = this.categories.find(c => c.id === catId);
+    if (!cat) return;
+
+    this.editingQuestionsCategory = catId;
+    document.getElementById('questions-modal-title').textContent = `Edit Questions — ${cat.name}`;
+    document.getElementById('questions-modal-info').textContent = 'Loading questions...';
+    document.getElementById('questions-tbody').innerHTML = '<tr><td colspan="10" class="loading-cell">Loading...</td></tr>';
+    document.getElementById('questions-modal-error').textContent = '';
+
+    document.getElementById('questions-modal').classList.remove('hidden');
+    this.loadQuestions(catId);
+  }
+
+  closeQuestionsModal() {
+    document.getElementById('questions-modal').classList.add('hidden');
+    this.editingQuestionsCategory = null;
+  }
+
+  async loadQuestions(catId) {
+    try {
+      const data = await this.apiRequest(`/api/admin/questions?categoryId=${catId}&limit=999`);
+      this.renderQuestionsModal(data.questions);
+    } catch (err) {
+      document.getElementById('questions-modal-info').textContent = '';
+      document.getElementById('questions-tbody').innerHTML =
+        `<tr><td colspan="10" class="loading-cell error">Failed to load questions: ${err.message}</td></tr>`;
+    }
+  }
+
+  renderQuestionsModal(questions) {
+    const tbody = document.getElementById('questions-tbody');
+    const info = document.getElementById('questions-modal-info');
+
+    info.textContent = `${questions.length} question(s) in this category. Change a question's category using the dropdown, then click Save.`;
+
+    if (questions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="loading-cell">No questions in this category.</td></tr>';
+      return;
+    }
+
+    // Build category options for the move dropdown
+    const catOptions = this.categories.map(c =>
+      `<option value="${c.id}">${this.escapeHtml(c.name)}</option>`
+    ).join('');
+
+    tbody.innerHTML = questions.map((q, i) => `
+      <tr data-question-id="${q.id}">
+        <td class="cell-index">${i + 1}</td>
+        <td>${this.escapeHtml(q.question)}</td>
+        <td>${this.escapeHtml(q.option_a)}</td>
+        <td>${this.escapeHtml(q.option_b)}</td>
+        <td>${this.escapeHtml(q.option_c)}</td>
+        <td>${this.escapeHtml(q.option_d)}</td>
+        <td><strong>${q.correct_answer}</strong></td>
+        <td>${q.difficulty}</td>
+        <td>
+          <select class="question-cat-select" data-question-id="${q.id}" data-field="category_id">
+            ${catOptions.replace('value="' + q.category_id + '"', 'selected value="' + q.category_id + '"')}
+          </select>
+        </td>
+        <td><button class="question-save-btn" data-question-id="${q.id}">Save</button></td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.question-save-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.updateQuestionCategory(parseInt(btn.dataset.questionId)));
+    });
+  }
+
+  async updateQuestionCategory(qId) {
+    const row = document.querySelector(`tr[data-question-id="${qId}"]`);
+    if (!row) return;
+
+    const catSelect = row.querySelector('.question-cat-select');
+    const newCategoryId = parseInt(catSelect.value);
+    const btn = row.querySelector('.question-save-btn');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳';
+    btn.disabled = true;
+
+    try {
+      await this.apiRequest(`/api/admin/questions/${qId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ category_id: newCategoryId }),
+      });
+      btn.textContent = '✓';
+      btn.classList.add('saved');
+      this.showAdminMessage('Question moved successfully', 'success');
+
+      // Refresh category question counts (without closing the modal) so both the
+      // admin table and the game dropdown reflect the change immediately.
+      this.categories = await this.apiRequest('/api/admin/categories');
+
+      // If the question moved OUT of the current category, remove it from the list
+      if (newCategoryId !== this.editingQuestionsCategory) {
+        row.remove();
+        const remaining = document.querySelectorAll('#questions-tbody tr[data-question-id]').length;
+        document.getElementById('questions-modal-info').textContent =
+          `${remaining} question(s) in this category. Change a question's category using the dropdown, then click Save.`;
+      }
+    } catch (err) {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      document.getElementById('questions-modal-error').textContent = err.message;
     }
   }
 

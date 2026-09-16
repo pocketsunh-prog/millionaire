@@ -1722,6 +1722,161 @@ body {
   color: #ffcc88;
 }
 
+/* ---- Mix Category ---- */
+
+.mix-btn {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.mix-hint {
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.mix-category-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mix-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mix-cat-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mix-cat-item.selected {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.mix-cat-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffd700;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #ffd700;
+}
+
+.mix-cat-item.selected .mix-cat-checkbox::after {
+  content: '✓';
+}
+
+.mix-cat-name {
+  flex: 1;
+  color: #eee;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.mix-cat-count {
+  color: #ffd700;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.mix-footer-info {
+  color: #aaa;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* ---- Edit Questions Modal ---- */
+
+.modal-content-large {
+  max-width: 900px;
+}
+
+.questions-modal-info {
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+
+.question-cat-select {
+  width: 100%;
+  padding: 4px 6px;
+  background: #1a1a3e;
+  color: #eee;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.question-cat-select:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.question-save-btn {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  background: #ffd700;
+  color: #0a0a2e;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.question-save-btn:hover {
+  background: #ffe44d;
+}
+
+.question-save-btn.saved {
+  background: #4caf50;
+  color: #fff;
+}
+
+/* ---- Category enabled/disabled states ---- */
+
+tr.category-disabled td {
+  opacity: 0.5;
+}
+
+.category-status-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.category-status-badge.disabled {
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+.category-status-badge.enabled {
+  color: #6bff6b;
+  border: 1px solid #6bff6b;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .game-title { font-size: 2rem; }
