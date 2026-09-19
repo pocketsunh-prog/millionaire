@@ -3,6 +3,7 @@ package com.millionaire.game.p2p.transport
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import kotlin.coroutines.cancellation.CancellationException
 
 /** How the user wants to connect. */
 enum class TransportChoice { AUTOMATIC, WIFI_DIRECT, BLUETOOTH }
@@ -43,11 +44,13 @@ class TransportFactory(private val context: Context) {
                         bluetooth.listen()
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e // user cancelled — not a transport failure
             } catch (e: Exception) {
                 errors += "${type.name}: ${e.message}"
             }
         }
-        throw NoTransportAvailableException("No transport available: ${errors.joinToString("; ")}")
+        throw failure(choice, errors)
     }
 
     /**
@@ -75,11 +78,31 @@ class TransportFactory(private val context: Context) {
                         bluetooth.connect(device)
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e // user cancelled — not a transport failure
             } catch (e: Exception) {
                 errors += "${type.name}: ${e.message}"
             }
         }
-        throw NoTransportAvailableException("No transport available: ${errors.joinToString("; ")}")
+        throw failure(choice, errors)
+    }
+
+    /**
+     * Builds the exception the UI will show. When the user pinned a single transport
+     * the first error is the real explanation, so it is surfaced verbatim instead of
+     * being buried under a "no transport available" wrapper that implies a fallback
+     * was attempted.
+     */
+    private fun failure(choice: TransportChoice, errors: List<String>): Exception {
+        if (errors.isEmpty()) {
+            return NoTransportAvailableException("No transport available")
+        }
+        if (transportOrder(choice).size == 1) {
+            // Single-transport attempt: strip the redundant "TYPE: " prefix.
+            val detail = errors.first().substringAfter(": ", errors.first())
+            return NoTransportAvailableException(detail)
+        }
+        return NoTransportAvailableException("No transport available: ${errors.joinToString("; ")}")
     }
 
     /** Bluetooth devices the client can show in its peer list. */
