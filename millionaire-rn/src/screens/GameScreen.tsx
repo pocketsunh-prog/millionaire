@@ -13,6 +13,12 @@ import {saveResultOfflineSafe} from '../db/sync';
 import {getLocalQuestions, getLocalQuestionsByIds} from '../db/repository';
 import {isOnline} from '../net';
 import {useAuth} from '../context/AuthContext';
+import {
+  pauseBgm,
+  playSfx,
+  resumeBgm,
+} from '../audio/audioManager';
+import {useBgm} from '../audio/useAudio';
 import {AudiencePoll} from '../components/AudiencePoll';
 import {PrizeLadder} from '../components/PrizeLadder';
 import {ErrorView, Loading, Screen} from '../components/ui';
@@ -42,6 +48,9 @@ type LifelineKey = '5050' | 'audience' | 'phone';
 export default function GameScreen({route, navigation}: Props) {
   const {category, mixCategoryIds} = route.params;
   const {user} = useAuth();
+
+  // Tense in-game bed for as long as this screen is focused.
+  useBgm('game');
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,9 +193,19 @@ export default function GameScreen({route, navigation}: Props) {
       setSelected(key);
       const correct = questions[index].correct_answer;
 
+      // The show's signature beat: the music drops out, a tension sting builds,
+      // then the verdict lands and the music comes back.
+      playSfx('lock');
+      pauseBgm();
+      playSfx('suspense');
+
       // reveal phase
       timers.current.push(
-        setTimeout(() => setRevealed(true), 1200),
+        setTimeout(() => {
+          setRevealed(true);
+          playSfx(key === correct ? 'correct' : 'wrong');
+          resumeBgm();
+        }, 1200),
         setTimeout(() => {
           if (key === correct) {
             handleCorrect();
@@ -200,6 +219,7 @@ export default function GameScreen({route, navigation}: Props) {
   );
 
   const walkAway = useCallback(() => {
+    playSfx('click');
     Alert.alert(
       'Walk away?',
       `You can take ${formatMoney(walkPrize(index))} and quit.`,
@@ -208,7 +228,8 @@ export default function GameScreen({route, navigation}: Props) {
         {
           text: 'Walk away',
           style: 'destructive',
-          onPress: () =>
+          onPress: () => {
+            playSfx('click');
             finish(
               'YOU WALKED AWAY',
               walkPrize(index),
@@ -216,7 +237,8 @@ export default function GameScreen({route, navigation}: Props) {
               'quit',
               index + 1,
               false,
-            ),
+            );
+          },
         },
       ],
     );
@@ -226,6 +248,7 @@ export default function GameScreen({route, navigation}: Props) {
     (type: LifelineKey) => {
       if (!lifelines[type] || selected || revealed || !questions[index]) return;
       setLifelines(l => ({...l, [type]: false}));
+      playSfx('lifeline');
 
       if (type === '5050') {
         const correct = questions[index].correct_answer;

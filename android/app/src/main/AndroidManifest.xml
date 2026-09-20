@@ -37,6 +37,7 @@
     <uses-feature android:name="android.hardware.wifi.direct" android:required="false" />
 
     <application
+        android:name=".MillionaireApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -61,6 +62,7 @@
         <activity android:name=".LeaderboardActivity" android:screenOrientation="portrait" />
         <activity android:name=".ProfileActivity" android:screenOrientation="portrait" />
         <activity android:name=".CategorySelectActivity" android:screenOrientation="portrait" />
+        <activity android:name=".CategoryManagementActivity" android:screenOrientation="portrait" />
         <activity android:name=".MixCategoryActivity" android:screenOrientation="portrait" />
         <activity android:name=".SettingsActivity" android:screenOrientation="portrait" />
         <activity

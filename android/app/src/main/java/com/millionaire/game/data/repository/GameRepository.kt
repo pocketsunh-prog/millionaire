@@ -169,6 +169,23 @@ class GameRepository(context: Context) {
 
     fun getCategoryEnabled(categoryId: Int): Boolean? = db.getCategoryEnabled(categoryId)?.let { it != 0 }
 
+    // --- Offline category management (enable / disable / delete) ---
+
+    /**
+     * Every category stored locally, including disabled and deleted ones, for the
+     * management screen. [getCategories] is what gameplay should use.
+     */
+    fun getManagedCategories(): List<Category> = db.getManagedCategories()
+
+    /**
+     * Delete a category from the offline database: its cached questions are removed
+     * and the category stays hidden after future syncs until [restoreCategory].
+     */
+    fun deleteCategory(categoryId: Int) = db.deleteCategory(categoryId)
+
+    /** Undo [deleteCategory]. Questions return on the next content sync. */
+    fun restoreCategory(categoryId: Int) = db.restoreCategory(categoryId)
+
     fun isDataAvailable(): Boolean = db.getQuestionCount() > 0
 
     fun getQuestionCount(): Int = db.getQuestionCount()

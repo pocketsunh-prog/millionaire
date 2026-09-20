@@ -6,12 +6,14 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.data.api.ApiClient
 import com.millionaire.game.databinding.ActivityRegisterBinding
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-class RegisterActivity : AppCompatActivity() {
+class RegisterActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityRegisterBinding
 
@@ -20,8 +22,12 @@ class RegisterActivity : AppCompatActivity() {
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.btnRegister.setOnClickListener { attemptRegister() }
+        binding.btnRegister.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            attemptRegister()
+        }
         binding.tvLogin.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             finish()
         }
     }

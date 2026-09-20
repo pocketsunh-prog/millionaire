@@ -16,7 +16,7 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
 
     companion object {
         private const val DATABASE_NAME = "millionaire.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 3
 
         private const val TABLE_CATEGORIES = "categories"
         private const val TABLE_QUESTIONS = "questions"
@@ -34,7 +34,8 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 description TEXT,
-                enabled INTEGER NOT NULL DEFAULT 1
+                enabled INTEGER NOT NULL DEFAULT 1,
+                deleted INTEGER NOT NULL DEFAULT 0
             )
         """)
 
@@ -82,6 +83,10 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
             // Add enabled column (default 1 = enabled). Existing rows keep playing.
             db.execSQL("ALTER TABLE $TABLE_CATEGORIES ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1")
         }
+        if (oldVersion < 3) {
+            // Add the soft-delete marker used by the offline category manager.
+            db.execSQL("ALTER TABLE $TABLE_CATEGORIES ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0")
+        }
     }
 
     fun clearAllData() {
@@ -97,16 +102,15 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
         db.beginTransaction()
         try {
             for (cat in categories) {
-                // Preserve the enabled flag across syncs: read the current value
-                // before overwriting so a locally/toggled disable isn't lost.
-                val enabledValue = getCategoryEnabled(cat.id)
+                // Local overrides win over the server's values: a category the user
+                // disabled or deleted on this device must stay that way after a sync.
+                val local = getCategoryRow(cat.id)
                 val values = ContentValues().apply {
                     put("id", cat.id)
                     put("name", cat.name)
                     put("description", cat.description)
-                    // Use the incoming enabled unless we already have a stored
-                    // override, in which case keep it.
-                    put("enabled", if (enabledValue != null) enabledValue else if (cat.enabled) 1 else 0)
+                    put("enabled", local?.let { if (it.enabled) 1 else 0 } ?: if (cat.enabled) 1 else 0)
+                    put("deleted", local?.let { if (it.deleted) 1 else 0 } ?: 0)
                 }
                 db.insertWithOnConflict(TABLE_CATEGORIES, null, values, SQLiteDatabase.CONFLICT_REPLACE)
                 count++
@@ -121,9 +125,13 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
     fun insertQuestions(questions: List<Question>): Int {
         val db = writableDatabase
         var count = 0
+        // Questions belonging to a deleted category are not (re)inserted, so a sync
+        // cannot resurrect content the user removed.
+        val deletedCategoryIds = getDeletedCategoryIds()
         db.beginTransaction()
         try {
             for (q in questions) {
+                if (deletedCategoryIds.contains(q.categoryId)) continue
                 val values = ContentValues().apply {
                     put("id", q.id)
                     put("category_id", q.categoryId)
@@ -145,21 +153,84 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
         return count
     }
 
+    /** Categories available for play: everything that is not deleted. */
     fun getCategories(): List<Category> {
         val categories = mutableListOf<Category>()
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT id, name, description, enabled FROM $TABLE_CATEGORIES ORDER BY name", null)
+        val cursor = db.rawQuery(
+            "SELECT id, name, description, enabled FROM $TABLE_CATEGORIES WHERE deleted = 0 ORDER BY name",
+            null
+        )
         cursor.use {
             while (it.moveToNext()) {
                 categories.add(Category(
                     id = it.getInt(0),
                     name = it.getString(1),
                     description = it.getString(2) ?: "",
-                    enabled = it.getInt(3) != 0
+                    enabled = it.getInt(3) != 0,
+                    deleted = false
                 ))
             }
         }
         return categories
+    }
+
+    /**
+     * Every category row including deleted ones, ordered so the ones in play come
+     * first: enabled, then disabled, then deleted (each group alphabetical).
+     */
+    fun getManagedCategories(): List<Category> {
+        val categories = mutableListOf<Category>()
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT id, name, description, enabled, deleted FROM $TABLE_CATEGORIES " +
+                "ORDER BY deleted ASC, enabled DESC, name ASC",
+            null
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                categories.add(Category(
+                    id = it.getInt(0),
+                    name = it.getString(1),
+                    description = it.getString(2) ?: "",
+                    enabled = it.getInt(3) != 0,
+                    deleted = it.getInt(4) != 0
+                ))
+            }
+        }
+        return categories
+    }
+
+    /** One category row, including the deleted flag. Null when unknown locally. */
+    fun getCategoryRow(categoryId: Int): Category? {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT id, name, description, enabled, deleted FROM $TABLE_CATEGORIES WHERE id = ?",
+            arrayOf(categoryId.toString())
+        )
+        cursor.use {
+            if (it.moveToFirst()) {
+                return Category(
+                    id = it.getInt(0),
+                    name = it.getString(1),
+                    description = it.getString(2) ?: "",
+                    enabled = it.getInt(3) != 0,
+                    deleted = it.getInt(4) != 0
+                )
+            }
+        }
+        return null
+    }
+
+    private fun getDeletedCategoryIds(): Set<Int> {
+        val ids = mutableSetOf<Int>()
+        val cursor = readableDatabase.rawQuery(
+            "SELECT id FROM $TABLE_CATEGORIES WHERE deleted = 1",
+            null
+        )
+        cursor.use {
+            while (it.moveToNext()) ids.add(it.getInt(0))
+        }
+        return ids
     }
 
     fun getCategoryEnabled(categoryId: Int): Int? {
@@ -178,6 +249,29 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
         val db = writableDatabase
         val values = ContentValues().apply { put("enabled", if (enabled) 1 else 0) }
         db.update(TABLE_CATEGORIES, values, "id = ?", arrayOf(categoryId.toString()))
+    }
+
+    /**
+     * Removes a category from offline play: the row is flagged `deleted` (so the next
+     * sync keeps it hidden) and its cached questions are dropped to free space.
+     */
+    fun deleteCategory(categoryId: Int) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val values = ContentValues().apply { put("deleted", 1) }
+            db.update(TABLE_CATEGORIES, values, "id = ?", arrayOf(categoryId.toString()))
+            db.delete(TABLE_QUESTIONS, "category_id = ?", arrayOf(categoryId.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Brings a deleted category back into play (its questions return on the next sync). */
+    fun restoreCategory(categoryId: Int) {
+        val values = ContentValues().apply { put("deleted", 0) }
+        writableDatabase.update(TABLE_CATEGORIES, values, "id = ?", arrayOf(categoryId.toString()))
     }
 
     /** 15 random questions drawn from the given category IDs (multi-category mix). */

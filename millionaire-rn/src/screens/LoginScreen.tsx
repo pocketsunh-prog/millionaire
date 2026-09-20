@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +13,9 @@ import {ApiError} from '../api/client';
 import {Screen, GoldButton} from '../components/ui';
 import {colors} from '../theme';
 import type {RootStackParamList} from '../types';
+import {getCachedUsernames} from '../auth/offlineCache';
+import {playSfx} from '../audio/audioManager';
+import {useBgm} from '../audio/useAudio';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -23,6 +26,14 @@ export default function LoginScreen({navigation}: Props) {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+  const [offlineUsers, setOfflineUsers] = useState<string[]>([]);
+
+  // The show's theme greets you before you even sign in.
+  useBgm('menu');
+
+  useEffect(() => {
+    getCachedUsernames().then(setOfflineUsers);
+  }, []);
 
   const enterHome = () =>
     navigation.reset({index: 0, routes: [{name: 'Home'}]});
@@ -90,22 +101,42 @@ export default function LoginScreen({navigation}: Props) {
             onSubmitEditing={submit}
           />
 
+          {offlineUsers.length > 0 && (
+            <View style={styles.offlineIndicator}>
+              <Text style={styles.offlineIndicatorText}>
+                📴 Offline login available for:{' '}
+                {offlineUsers.slice(0, 3).join(', ')}
+                {offlineUsers.length > 3
+                  ? ` +${offlineUsers.length - 3} more`
+                  : ''}
+              </Text>
+            </View>
+          )}
           {!!error && <Text style={styles.error}>{error}</Text>}
           {!!info && <Text style={styles.info}>{info}</Text>}
 
           <GoldButton label={busy ? 'Signing in…' : 'Sign In'} onPress={submit} disabled={busy} />
-          <Text style={styles.hint} onPress={() => navigation.navigate('Register')}>
+          <Text
+            style={styles.hint}
+            onPress={() => {
+              playSfx('click');
+              navigation.navigate('Register');
+            }}>
             New player? <Text style={styles.link}>Create an account</Text>
           </Text>
           <View style={styles.serverRow}>
             <Text
               style={styles.serverLink}
-              onPress={() => navigation.navigate('Settings')}>
+              onPress={() => {
+                playSfx('click');
+                navigation.navigate('Settings');
+              }}>
               ⚙️ Server Settings
             </Text>
             <Text
               style={styles.offlineLink}
               onPress={async () => {
+                playSfx('click');
                 await loginAsGuest();
                 enterHome();
               }}>
@@ -157,6 +188,19 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     color: colors.text,
     fontSize: 16,
+  },
+  offlineIndicator: {
+    backgroundColor: colors.backgroundAlt,
+    borderColor: colors.gold,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+  },
+  offlineIndicatorText: {
+    color: colors.gold,
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   error: {
     color: colors.red,

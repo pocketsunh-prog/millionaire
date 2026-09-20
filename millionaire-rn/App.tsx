@@ -1,10 +1,11 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Pressable, StatusBar, StyleSheet, Text} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {AuthProvider, useAuth} from './src/context/AuthContext';
+import {initAudio, releaseAudio} from './src/audio/audioManager';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -15,6 +16,7 @@ import ResultScreen from './src/screens/ResultScreen';
 import LeaderboardScreen from './src/screens/LeaderboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import CategoryManagementScreen from './src/screens/CategoryManagementScreen';
 import {colors} from './src/theme';
 import type {RootStackParamList} from './src/types';
 
@@ -72,6 +74,11 @@ function Navigator() {
             options={{title: 'Mix Categories'}}
           />
           <Stack.Screen
+            name="CategoryManagement"
+            component={CategoryManagementScreen}
+            options={{title: 'Manage Categories'}}
+          />
+          <Stack.Screen
             name="Game"
             component={GameScreen}
             options={{title: 'Game', headerBackVisible: false}}
@@ -121,6 +128,13 @@ function Navigator() {
 }
 
 function App() {
+  // Load the saved music/effects preferences and warm the native audio engine up
+  // once for the whole app.
+  useEffect(() => {
+    initAudio();
+    return () => releaseAudio();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <AuthProvider>

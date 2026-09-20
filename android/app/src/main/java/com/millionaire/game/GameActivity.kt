@@ -11,6 +11,8 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.data.model.GameSession
 import com.millionaire.game.data.model.Question
 import com.millionaire.game.data.repository.GameRepository
@@ -20,7 +22,10 @@ import com.millionaire.game.util.PrizeLadder
 import com.millionaire.game.util.SessionManager
 import kotlinx.coroutines.launch
 
-class GameActivity : AppCompatActivity() {
+class GameActivity : AppCompatActivity(), BgmHost {
+
+    /** The board gets its own tense bed instead of the menu music. */
+    override val bgmTrack = SoundManager.BgmTrack.GAME
 
     private lateinit var binding: ActivityGameBinding
     private lateinit var repository: GameRepository
@@ -140,7 +145,21 @@ class GameActivity : AppCompatActivity() {
         val question = questions[currentQuestionIndex]
         val correct = answer == question.correctAnswer
 
+        // The show's signature beat: the music drops out, a tension sting builds
+        // while the answer is considered, then the verdict lands and music returns.
+        SoundManager.playSfx(SoundManager.Sfx.LOCK)
+        SoundManager.pauseForSting()
+        handler.postDelayed({ SoundManager.playSfx(SoundManager.Sfx.SUSPENSE) }, 250)
+
         highlightAnswer(answer, correct)
+
+        // Verdict lands at 2 s, right as the 1.3 s riser finishes.
+        handler.postDelayed({
+            SoundManager.playSfx(
+                if (correct) SoundManager.Sfx.CORRECT else SoundManager.Sfx.WRONG
+            )
+            SoundManager.resumeAfterSting()
+        }, 1900)
 
         handler.postDelayed({
             if (correct) {
@@ -190,6 +209,7 @@ class GameActivity : AppCompatActivity() {
     private fun useFiftyFifty() {
         if (fiftyFiftyUsed) return
         fiftyFiftyUsed = true
+        SoundManager.playSfx(SoundManager.Sfx.LIFELINE)
         binding.btn5050.isEnabled = false
         binding.btn5050.alpha = 0.4f
 
@@ -213,6 +233,7 @@ class GameActivity : AppCompatActivity() {
     private fun useAudiencePoll() {
         if (audienceUsed) return
         audienceUsed = true
+        SoundManager.playSfx(SoundManager.Sfx.LIFELINE)
         binding.btnAudience.isEnabled = false
         binding.btnAudience.alpha = 0.4f
 
@@ -256,6 +277,7 @@ class GameActivity : AppCompatActivity() {
     private fun usePhoneFriend() {
         if (phoneUsed) return
         phoneUsed = true
+        SoundManager.playSfx(SoundManager.Sfx.LIFELINE)
         binding.btnPhone.isEnabled = false
         binding.btnPhone.alpha = 0.4f
 
@@ -293,10 +315,12 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun walkAway() {
+        SoundManager.playSfx(SoundManager.Sfx.CLICK)
         AlertDialog.Builder(this)
             .setTitle("Walk Away?")
             .setMessage("You will leave with ${PrizeLadder.formatPrize(currentPrize)}. Are you sure?")
             .setPositiveButton("Yes, Walk Away") { _, _ ->
+                SoundManager.playSfx(SoundManager.Sfx.CLICK)
                 saveGameResult("quit", currentPrize, currentQuestionIndex)
                 finish()
             }
@@ -309,6 +333,9 @@ class GameActivity : AppCompatActivity() {
         val status = if (won) "won" else "lost"
 
         saveGameResult(status, finalAmount, currentQuestionIndex)
+
+        // Fanfare or consolation sting, over the menu bed the user returns to.
+        SoundManager.playSfx(if (won) SoundManager.Sfx.WIN else SoundManager.Sfx.LOSE)
 
         val message = if (won) {
             "🎉 Congratulations! You won ${PrizeLadder.formatPrize(finalAmount)}!"

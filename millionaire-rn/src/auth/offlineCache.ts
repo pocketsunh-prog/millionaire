@@ -76,3 +76,9 @@ export async function verifyOfflineCredentials(
   }
   return entry.user;
 }
+
+/** Get the list of usernames that have cached credentials for offline login. */
+export async function getCachedUsernames(): Promise<string[]> {
+  const list = await readCredentials();
+  return list.map(c => c.username);
+}

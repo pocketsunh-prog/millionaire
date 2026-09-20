@@ -8,12 +8,14 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.data.model.Category
 import com.millionaire.game.data.repository.GameRepository
 import com.millionaire.game.databinding.ActivityCategorySelectBinding
 import com.millionaire.game.databinding.ItemCategoryBinding
 
-class CategorySelectActivity : AppCompatActivity() {
+class CategorySelectActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityCategorySelectBinding
     private lateinit var repository: GameRepository
@@ -26,18 +28,32 @@ class CategorySelectActivity : AppCompatActivity() {
 
         repository = GameRepository(this)
 
-        setupRecyclerView()
-
-        binding.btnBack.setOnClickListener { finish() }
+        binding.btnBack.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            finish()
+        }
         binding.btnMixed.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, MixCategoryActivity::class.java))
+        }
+        // Manage which categories live in the offline database.
+        binding.btnManage.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            startActivity(Intent(this, CategoryManagementActivity::class.java))
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Re-read on resume: the manager screen may have disabled or deleted some.
+        setupRecyclerView()
+    }
+
     private fun setupRecyclerView() {
-        // Only enabled categories appear in the chooser.
+        // Only enabled, non-deleted categories appear in the chooser.
         val categories = repository.getEnabledCategories()
         adapter = CategoryAdapter(categories) { category ->
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startGame(category.id)
         }
         binding.rvCategories.layoutManager = LinearLayoutManager(this)

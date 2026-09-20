@@ -19,9 +19,15 @@ class SessionManager(context: Context) {
         private const val KEY_BEST_SCORE = "best_score"
         private const val KEY_BEST_QUESTION = "best_question"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        private const val KEY_OFFLINE_SESSION = "offline_session"
     }
 
-    fun saveAuthSession(token: String, user: User) {
+    /**
+     * Persists the signed-in user. [offline] marks a session that was restored from
+     * the local credential cache because the server was unreachable — stats and
+     * results then sync on the next successful online sign-in.
+     */
+    fun saveAuthSession(token: String, user: User, offline: Boolean = false) {
         prefs.edit().apply {
             putString(KEY_TOKEN, token)
             putInt(KEY_USER_ID, user.id)
@@ -33,6 +39,7 @@ class SessionManager(context: Context) {
             putInt(KEY_BEST_SCORE, user.bestScore)
             putInt(KEY_BEST_QUESTION, user.bestQuestion)
             putBoolean(KEY_IS_LOGGED_IN, true)
+            putBoolean(KEY_OFFLINE_SESSION, offline)
             apply()
         }
     }
@@ -40,6 +47,9 @@ class SessionManager(context: Context) {
     fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
 
     fun isLoggedIn(): Boolean = prefs.getBoolean(KEY_IS_LOGGED_IN, false)
+
+    /** True when the current session came from an offline login. */
+    fun isOfflineSession(): Boolean = prefs.getBoolean(KEY_OFFLINE_SESSION, false)
 
     fun getUser(): User? {
         if (!isLoggedIn()) return null

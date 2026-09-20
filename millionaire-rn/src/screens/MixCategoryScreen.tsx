@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {Screen, GoldButton} from '../components/ui';
+import {playSfx} from '../audio/audioManager';
+import {useBgm} from '../audio/useAudio';
 import {colors} from '../theme';
 import type {RootStackParamList, Category} from '../types';
 import {
@@ -18,6 +20,8 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'MixCategory'>;
 
 export default function MixCategoryScreen({navigation}: Props) {
+  useBgm('menu');
+
   // Only enabled categories can be mixed into a game.
   const all = getLocalCategories().filter(c => c.enabled !== false);
   const [selected, setSelected] = useState<Record<number, boolean>>(() => {
@@ -28,10 +32,13 @@ export default function MixCategoryScreen({navigation}: Props) {
     return initial;
   });
 
-  const toggle = (id: number) =>
+  const toggle = (id: number) => {
+    playSfx('click');
     setSelected(prev => ({...prev, [id]: !prev[id]}));
+  };
 
   const selectAll = () => {
+    playSfx('click');
     const next: Record<number, boolean> = {};
     all.forEach(c => {
       next[c.id] = true;

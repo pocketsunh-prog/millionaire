@@ -9,12 +9,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.CheckBox
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.data.model.Category
 import com.millionaire.game.data.repository.GameRepository
 import com.millionaire.game.databinding.ActivityMixCategoryBinding
 import com.millionaire.game.databinding.ItemMixCategoryBinding
 
-class MixCategoryActivity : AppCompatActivity() {
+class MixCategoryActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityMixCategoryBinding
     private lateinit var repository: GameRepository
@@ -37,8 +39,12 @@ class MixCategoryActivity : AppCompatActivity() {
         setupRecyclerView(categories, questionCounts)
         updateFooter()
 
-        binding.btnBack.setOnClickListener { finish() }
+        binding.btnBack.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            finish()
+        }
         binding.btnSelectAll.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             categories.forEach { selected[it.id] = true }
             adapter.notifyDataSetChanged()
             updateFooter()
@@ -48,6 +54,7 @@ class MixCategoryActivity : AppCompatActivity() {
 
     private fun setupRecyclerView(categories: List<Category>, questionCounts: Map<Int, Int>) {
         adapter = MixAdapter(categories, selected, questionCounts) { category ->
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             selected[category.id] = !(selected[category.id] ?: true)
             updateFooter()
         }

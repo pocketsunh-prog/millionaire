@@ -16,7 +16,12 @@ data class Category(
     val id: Int,
     val name: String,
     val description: String,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    /**
+     * Soft-delete marker for the offline database: the row is kept (so the choice
+     * survives the next sync) but the category and its questions are hidden.
+     */
+    val deleted: Boolean = false
 )
 
 data class User(

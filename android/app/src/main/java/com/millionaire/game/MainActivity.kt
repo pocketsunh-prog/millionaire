@@ -6,6 +6,8 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.data.repository.GameRepository
 import com.millionaire.game.data.sync.SyncWorker
 import com.millionaire.game.databinding.ActivityMainBinding
@@ -13,7 +15,7 @@ import com.millionaire.game.util.NetworkUtil
 import com.millionaire.game.util.SessionManager
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var repository: GameRepository
@@ -43,32 +45,50 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateOfflineBanner() {
-        binding.tvOfflineBanner.visibility =
-            if (NetworkUtil.isNetworkAvailable(this)) View.GONE else View.VISIBLE
+        val online = NetworkUtil.isNetworkAvailable(this)
+        when {
+            !online -> {
+                binding.tvOfflineBanner.text = getString(R.string.offline_mode)
+                binding.tvOfflineBanner.visibility = View.VISIBLE
+            }
+            // Online again but this session was restored from the offline cache:
+            // results still have to be pushed once the user signs in properly.
+            sessionManager.isOfflineSession() -> {
+                binding.tvOfflineBanner.text = getString(R.string.offline_session_banner)
+                binding.tvOfflineBanner.visibility = View.VISIBLE
+            }
+            else -> binding.tvOfflineBanner.visibility = View.GONE
+        }
     }
 
     private fun setupUI() {
         binding.btnPlay.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, CategorySelectActivity::class.java))
         }
 
         binding.btnLogin.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, LoginActivity::class.java))
         }
 
         binding.btnLeaderboard.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, LeaderboardActivity::class.java))
         }
 
         binding.btnProfile.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, ProfileActivity::class.java))
         }
 
         binding.btnGuest.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, CategorySelectActivity::class.java))
         }
 
         binding.btnSettings.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             startActivity(Intent(this, SettingsActivity::class.java))
         }
     }

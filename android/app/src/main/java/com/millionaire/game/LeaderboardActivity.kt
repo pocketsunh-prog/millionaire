@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.data.model.LeaderboardEntry
 import com.millionaire.game.data.repository.GameRepository
 import com.millionaire.game.databinding.ActivityLeaderboardBinding
@@ -17,7 +19,7 @@ import com.millionaire.game.util.NetworkUtil
 import com.millionaire.game.util.PrizeLadder
 import kotlinx.coroutines.launch
 
-class LeaderboardActivity : AppCompatActivity() {
+class LeaderboardActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityLeaderboardBinding
     private lateinit var adapter: LeaderboardAdapter
@@ -28,12 +30,17 @@ class LeaderboardActivity : AppCompatActivity() {
         binding = ActivityLeaderboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.btnBack.setOnClickListener { finish() }
+        binding.btnBack.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            finish()
+        }
         binding.btnSortScore.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             sortByScore = true
             loadLeaderboard()
         }
         binding.btnSortWins.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
             sortByScore = false
             loadLeaderboard()
         }

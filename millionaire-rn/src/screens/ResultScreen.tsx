@@ -1,7 +1,9 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {GhostButton, GoldButton, Screen} from '../components/ui';
+import {playSfx} from '../audio/audioManager';
+import {useBgm} from '../audio/useAudio';
 import {colors, formatMoney} from '../theme';
 import type {RootStackParamList} from '../types';
 
@@ -9,6 +11,17 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
 export default function ResultScreen({route, navigation}: Props) {
   const {title, amount, message, category, isNewRecord} = route.params;
+
+  // Back to the menu bed; the win/lose sting plays over it.
+  useBgm('menu');
+
+  useEffect(() => {
+    if (title === 'CONGRATULATIONS!') {
+      playSfx('win');
+    } else if (title === 'GAME OVER') {
+      playSfx('lose');
+    }
+  }, [title]);
 
   return (
     <Screen>

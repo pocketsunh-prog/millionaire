@@ -3,11 +3,13 @@ package com.millionaire.game
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.millionaire.game.audio.BgmHost
+import com.millionaire.game.audio.SoundManager
 import com.millionaire.game.databinding.ActivityProfileBinding
 import com.millionaire.game.util.PrizeLadder
 import com.millionaire.game.util.SessionManager
 
-class ProfileActivity : AppCompatActivity() {
+class ProfileActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityProfileBinding
     private lateinit var sessionManager: SessionManager
@@ -19,8 +21,14 @@ class ProfileActivity : AppCompatActivity() {
 
         sessionManager = SessionManager(this)
 
-        binding.btnBack.setOnClickListener { finish() }
-        binding.btnLogout.setOnClickListener { logout() }
+        binding.btnBack.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            finish()
+        }
+        binding.btnLogout.setOnClickListener {
+            SoundManager.playSfx(SoundManager.Sfx.CLICK)
+            logout()
+        }
 
         displayProfile()
     }

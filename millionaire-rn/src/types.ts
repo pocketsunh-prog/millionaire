@@ -62,6 +62,7 @@ export type RootStackParamList = {
   Home: undefined;
   Category: undefined;
   MixCategory: undefined;
+  CategoryManagement: undefined;
   Game: { category: string; mixCategoryIds?: number[] };
   Result: {
     title: string;

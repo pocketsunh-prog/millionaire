@@ -104,6 +104,12 @@ android {
             }
         }
     }
+    androidResources {
+        // Keep the generated WAV music/sound-effects streamable straight from the
+        // APK instead of being deflated, so MediaPlayer/SoundPool can memory-map
+        // them and looping music starts without a decode hitch.
+        noCompress += ["wav"]
+    }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug

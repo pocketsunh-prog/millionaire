@@ -16,6 +16,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.millionaire.game.R
+import com.millionaire.game.audio.BgmHost
 import com.millionaire.game.databinding.ActivityPeerSyncBinding
 import com.millionaire.game.p2p.permission.PermissionHelper
 import com.millionaire.game.p2p.sync.PeerSyncService
@@ -30,7 +31,7 @@ import kotlinx.coroutines.launch
  * requests runtime permissions, binds [PeerSyncService], and renders live progress
  * plus a result screen with "sync again" and "restore backup".
  */
-class PeerSyncActivity : AppCompatActivity() {
+class PeerSyncActivity : AppCompatActivity(), BgmHost {
 
     private lateinit var binding: ActivityPeerSyncBinding
     private var service: PeerSyncService? = null

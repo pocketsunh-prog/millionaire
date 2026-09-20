@@ -18,6 +18,9 @@ history.
 - 🏆 **Leaderboard** — top scores or most wins
 - 👤 **Profile** — stats + personal game history
 - 🎲 **Category selection** — mixed or per-category (HK DSE subjects included)
+- 🎵 **Music & sound effects** — looping show music, answer stings and win/lose
+  fanfares, each with its own on/off switch and volume (Settings → **Audio**)
+- 📋 **Category manager** — enable, disable or delete synced categories offline
 
 ## Prerequisites
 
@@ -139,11 +142,20 @@ millionaire-rn/
 │   │   ├── database.ts        # SQLite schema + connection
 │   │   ├── repository.ts      # typed SQL access (offline bank, result queue)
 │   │   └── sync.ts            # server → SQLite sync + queued-result flush
+│   ├── audio/
+│   │   ├── audioManager.ts    # music/effects playback + saved preferences
+│   │   └── useAudio.ts        # useBgm / useAudioSettings hooks
+│   ├── auth/offlineCache.ts   # cached credentials for offline login
 │   ├── context/AuthContext.tsx
-│   ├── components/            # ui, PrizeLadder, AudiencePoll
-│   └── screens/               # Login, Register, Home, Category, Game,
-│                              # Result, Leaderboard, Profile, Settings
+│   ├── components/            # ui (buttons, Toggle, VolumeControl),
+│   │                          # PrizeLadder, AudiencePoll
+│   └── screens/               # Login, Register, Home, Category, MixCategory,
+│                              # CategoryManagement, Game, Result, Leaderboard,
+│                              # Profile, Settings
+├── tools/generate-audio.js    # synthesises the BGM + effect WAVs
 └── android/                   # standard RN Android project
+    └── app/src/main/          # java/…/audio = native SoundModule
+                               # res/raw = generated .wav assets
 ```
 
 ## Offline mode
@@ -174,11 +186,63 @@ local SQLite database (`@op-engineering/op-sqlite`).
 Storage layout: `src/db/` — `database.ts` (schema/open), `repository.ts`
 (typed SQL access), `sync.ts` (fetch → SQLite + result queue).
 
+Synced categories can be managed on the device: Home → **📦 Offline data** →
+**📋 Manage** lets you enable/disable a category (disabled ones disappear from
+the category picker and the mixed game) or delete it together with its questions.
+Deleted categories come back on the next sync.
+
+## Audio
+
+Background music and sound effects are generated from scratch by
+`tools/generate-audio.js` — plain Node math, no samples, libraries or encoders —
+and ship as 16-bit PCM mono WAVs (22 050 Hz) in `android/app/src/main/res/raw/`:
+
+| Asset | Used for |
+| --- | --- |
+| `bgm_menu` | login, menus, category picker, results (seamless ~21 s loop) |
+| `bgm_game` | in-game bed (seamless ~18 s loop) |
+| `sfx_click` · `sfx_lock` · `sfx_suspense` | UI taps, answer locked, reveal riser |
+| `sfx_correct` · `sfx_wrong` | answer verdict |
+| `sfx_lifeline` | lifeline used |
+| `sfx_win` · `sfx_lose` | final result |
+
+Regenerate at any time (deterministic — identical bytes on every run):
+
+```bash
+node tools/generate-audio.js
+```
+
+Playback is handled by a small native module, `SoundModule`
+(`android/app/src/main/java/com/millionaireapp/audio/`): a **SoundPool** for
+effects (preloaded, so the very first tap is never silent) and a looping
+**MediaPlayer** for music. It pauses the music when the app goes to the
+background and resumes on return, and ducks/pauses when another app takes audio
+focus. No third-party audio dependency is used; the WAVs are kept uncompressed
+in the APK (`androidResources { noCompress }`) so they stream instead of being
+decoded twice.
+
+`src/audio/audioManager.ts` owns the preferences (persisted in AsyncStorage) and
+`src/audio/useAudio.ts` exposes the hooks: `useBgm(track)` gives a screen its
+music, `useAudioSettings()` drives the Settings UI. Users can toggle music and
+effects, set each volume, and audition the stings under **Settings → Audio**.
+Every audio call is a safe no-op when the native module is unavailable (iOS or
+Jest), so the JS layer never crashes without audio.
+
+The show's signature beat is wired into the game: locking an answer ducks the
+music and plays a tension riser, the verdict lands with the correct/wrong sting
+and the music returns, and the result screen plays the fanfare or the
+consolation sting over the menu bed.
+
+> **Adding a sound:** create it in `tools/generate-audio.js`, regenerate, then add
+> the resource name to `RAW_RESOURCES` in `SoundModule.kt` and to `SFX_RESOURCE`
+> in `audioManager.ts`.
+
 ## Tests & checks
 
 ```bash
 npm test       # renders the full app tree (AsyncStorage mocked)
 npx tsc --noEmit
+npx eslint .
 ```
 
 ## Notes vs the web client

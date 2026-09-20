@@ -47,6 +47,13 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    androidResources {
+        // Keep the generated WAV music/sound effects uncompressed in the APK so
+        // MediaPlayer/SoundPool can stream them straight from the package
+        // (openRawResourceFd fails on deflated resources).
+        noCompress += ['wav']
+    }
+
     kotlinOptions {
         jvmTarget = '17'
     }

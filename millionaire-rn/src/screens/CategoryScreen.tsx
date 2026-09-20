@@ -10,6 +10,8 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {getCategories} from '../api/game';
 import {getLocalCategories} from '../db/repository';
 import {isOnline} from '../net';
+import {playSfx} from '../audio/audioManager';
+import {useBgm} from '../audio/useAudio';
 import {ErrorView, Loading, Screen} from '../components/ui';
 import {colors} from '../theme';
 import type {Category, RootStackParamList} from '../types';
@@ -39,6 +41,8 @@ export default function CategoryScreen({navigation}: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useBgm('menu');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,7 +102,10 @@ export default function CategoryScreen({navigation}: Props) {
         renderItem={({item}) => (
           <TouchableOpacity
             style={styles.item}
-            onPress={() => navigation.navigate('Game', {category: item.name})}>
+            onPress={() => {
+              playSfx('click');
+              navigation.navigate('Game', {category: item.name});
+            }}>
             <Text style={styles.itemEmoji}>
               {EMOJIS[item.name] ?? '❓'}
             </Text>
@@ -116,7 +123,10 @@ export default function CategoryScreen({navigation}: Props) {
         ListHeaderComponent={
           <TouchableOpacity
             style={[styles.item, styles.mixed]}
-            onPress={() => navigation.navigate('MixCategory')}>
+            onPress={() => {
+              playSfx('click');
+              navigation.navigate('MixCategory');
+            }}>
             <Text style={styles.itemEmoji}>🎲</Text>
             <View style={styles.itemTextWrap}>
               <Text style={styles.itemName}>Mixed Categories</Text>

@@ -80,6 +80,21 @@ export function getLocalCategories(): Category[] {
   }));
 }
 
+/** Enable or disable a category in the local offline database. */
+export function setCategoryEnabled(id: number, enabled: boolean): void {
+  getDb().executeSync(
+    'UPDATE categories SET enabled = ? WHERE id = ?',
+    [enabled ? 1 : 0, String(id)],
+  );
+}
+
+/** Delete a category and all its questions from the local offline database. */
+export function deleteCategory(id: number): void {
+  const db = getDb();
+  db.executeSync('DELETE FROM questions WHERE category_id = ?', [String(id)]);
+  db.executeSync('DELETE FROM categories WHERE id = ?', [String(id)]);
+}
+
 export function getQuestionCountByCategory(categoryId: number): number {
   const row = getDb().executeSync(
     'SELECT COUNT(*) AS n FROM questions WHERE category_id = ?',

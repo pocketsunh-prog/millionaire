@@ -2,6 +2,7 @@ import React, {useCallback, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useAuth} from '../context/AuthContext';
+import {useBgm} from '../audio/useAudio';
 import {GhostButton, GoldButton, Screen} from '../components/ui';
 import {flushPendingResults, getLastSync, syncOfflineData} from '../db/sync';
 import {getLocalStats, pendingResultCount} from '../db/repository';
@@ -13,6 +14,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props) {
   const {user, isGuest, isOffline, logout} = useAuth();
+
+  // Menu music for the hub (and everything reachable from it).
+  useBgm('menu');
 
   const [stats, setStats] = useState({categories: 0, questions: 0});
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -107,12 +111,19 @@ export default function HomeScreen({navigation}: Props) {
               ⏳ {pending} result(s) waiting to upload
             </Text>
           )}
-          <GhostButton
-            label={syncing ? 'Syncing…' : '🔄 Sync offline data'}
-            onPress={() => doSync()}
-            disabled={syncing}
-            style={styles.syncBtn}
-          />
+          <View style={styles.offlineButtons}>
+            <GhostButton
+              label={syncing ? 'Syncing…' : '🔄 Sync'}
+              onPress={() => doSync()}
+              disabled={syncing}
+              style={styles.syncBtn}
+            />
+            <GhostButton
+              label="📋 Manage"
+              onPress={() => navigation.navigate('CategoryManagement')}
+              style={styles.syncBtn}
+            />
+          </View>
           {syncMsg && (
             <Text
               style={[
@@ -196,8 +207,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  syncBtn: {
+  offlineButtons: {
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 12,
+  },
+  syncBtn: {
+    flex: 1,
   },
   syncMsg: {
     color: colors.green,

@@ -20,6 +20,9 @@ Native Android version of the "Who Wants To Be A Millionaire?" trivia game.
 - 👤 **User Accounts** — Register, login, profile with stats
 - 📴 **Offline Play** — Once synced, play without internet
 - 🎲 **Category Selection** — Mixed or single-category play
+- 🔐 **Offline login** — Sign in without a connection using locally cached credentials
+- 📋 **Category manager** — Enable, disable or delete categories in the offline database
+- 🎵 **Music & sound effects** — Looping show music, answer stings and win/lose fanfares
 
 ## Prerequisites
 
@@ -129,6 +132,111 @@ adb install app/build/outputs/apk/release/app-release.apk
 - **Game results** — saved locally (`synced=0`), pushed to server when online
 - **Background sync** — WorkManager drains pending results every 15 min on network return
 - **Leaderboard** — fetched live from the server; falls back to cached local rankings offline
+
+## Offline login
+
+A returning player can sign in with **no connection at all**.
+
+- On every successful online login, `CredentialCache`
+  (`util/CredentialCache.kt`) stores the account's email, username, a random
+  per-account salt, `SHA-256(salt + "|" + password)`, the profile the server
+  returned, and the auth token. **The plaintext password is never stored.**
+- When the device is offline — or the server cannot be reached (an `IOException`,
+  a wrong URL, a dead host) — `LoginActivity` verifies the typed credentials
+  against that cache instead of giving up, restores the session and drops the
+  user straight into the game with the locally cached question bank.
+- A **wrong password answered by the server is never treated as "offline"**: only
+  connectivity failures fall back to the cache, so an invalid password still
+  fails normally.
+- The Login screen shows a hint listing the accounts that can sign in offline
+  (e.g. `📴 Offline login available for: you@example.com`).
+- The session is flagged offline (`SessionManager.isOfflineSession()`), which
+  MainActivity surfaces as a banner: results queue up and upload on the next
+  successful online sign-in.
+- Offline login is impossible for an account that has never signed in while
+  connected — the app cannot know a password it has never seen. Use
+  **Play as Guest** in that case.
+
+## Managing offline categories
+
+**Select Category → ⚙ MANAGE** (also reachable from **Settings → Manage
+Categories**) manages what is stored in the local SQLite database:
+
+| Action | Effect |
+| --- | --- |
+| **Disable** (switch) | Hides the category from the picker and from mixed games; its questions stay cached, so re-enabling is instant |
+| **Delete** (button) | Removes the category **and its cached questions** from the device |
+| **Restore** | Brings a deleted category back (its questions return on the next sync) |
+
+Both choices are **remembered across server syncs**: `DatabaseHelper.insertCategories`
+keeps the local `enabled` / `deleted` flags instead of overwriting them with the
+server's values, and `insertQuestions` skips questions whose category was deleted —
+so re-syncing cannot resurrect content you removed. The screen shows a running
+tally (`4 enabled · 1 disabled · 1 deleted`).
+
+Deleting is a soft delete in the local row plus a hard delete of the questions:
+that is what lets the choice survive a later sync. A **peer sync** merges whole
+rows from the other device and can therefore bring a deleted category back —
+delete it again on this device if you do not want it.
+
+## Audio
+
+Background music and sound effects are generated from scratch by
+`tools/generate-audio.js` — plain Node math, no samples, libraries or encoders —
+and ship as 16-bit PCM mono WAVs (22 050 Hz) in `app/src/main/res/raw/`:
+
+| Asset | Used for |
+| --- | --- |
+| `bgm_menu` | login, menus, category picker, results (seamless ~21 s loop) |
+| `bgm_game` | the game board (seamless ~18 s loop) |
+| `sfx_click` · `sfx_lock` · `sfx_suspense` | UI taps, answer locked, reveal riser |
+| `sfx_correct` · `sfx_wrong` | answer verdict |
+| `sfx_lifeline` | lifeline used |
+| `sfx_win` · `sfx_lose` | final result |
+
+Regenerate at any time (deterministic — identical bytes on every run):
+
+```bash
+node tools/generate-audio.js
+```
+
+Playback lives in `audio/SoundManager.kt`, initialised once from `MillionaireApp`:
+a **SoundPool** for effects (preloaded, so the very first tap is not silent) and a
+looping **MediaPlayer** for music. It pauses the music when the whole app leaves
+the foreground (tracking started activities, so navigating between screens never
+interrupts playback) and ducks/pauses when another app takes audio focus. The
+WAVs are kept uncompressed in the APK (`androidResources { noCompress }`) so they
+stream instead of being decoded twice. No third-party audio dependency is used.
+
+Activities declare their music bed by implementing `BgmHost` (defaults to the
+menu track; `GameActivity` overrides it with the game bed). The game wires the
+show's signature beat: locking an answer ducks the music and plays a tension
+riser, the verdict lands with the correct/wrong sting, then the music returns,
+and game over plays the fanfare or the consolation sting.
+
+Users control everything in **Settings → Audio**: music and effects switches,
+independent volume sliders, and buttons to audition the stings. Preferences are
+persisted in SharedPreferences.
+
+> **Adding a sound:** create it in `tools/generate-audio.js`, regenerate, then add
+> it to the `Sfx` enum in `SoundManager.kt`.
+
+## Testing without the backend
+
+The real backend needs Docker + MySQL. To exercise sync, offline login and the
+category manager on an emulator without it, `tools/mock-api-server.js` serves a
+compatible API (accounts are in memory):
+
+```bash
+node tools/mock-api-server.js 3000
+```
+
+Then in the app: **Settings → Server URL** → `http://10.0.2.2:3000/` (emulator) or
+`http://<your-lan-ip>:3000/` (device) → **Test Connection**. Suggested run-through:
+register + log in (caches credentials), disable/delete a category, restart and log
+in again (the choices survive the content re-sync), then turn on airplane mode and
+log in again to check offline login.
+
 
 ## Project Structure
 

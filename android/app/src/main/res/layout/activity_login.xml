@@ -71,6 +71,20 @@
         android:layout_height="wrap_content"
         android:textColor="@color/red"
         android:textSize="14sp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Which accounts can sign in without a connection (offline login) -->
+    <TextView
+        android:id="@+id/tvOfflineHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@color/gold"
+        android:gravity="center"
+        android:background="@drawable/bg_stat_box"
+        android:padding="10dp"
         android:visibility="gone"
         android:layout_marginBottom="16dp" />
 
