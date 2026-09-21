@@ -365,6 +365,10 @@ class DatabaseHelper(val context: Context) : SQLiteOpenHelper(context, DATABASE_
         return 0
     }
 
+    /** Every cached question, in stable id order — used for export. */
+    fun getAllQuestions(): List<Question> {
+        return getQuestions(categoryId = null, difficulty = null, limit = Int.MAX_VALUE)
+    }
     fun saveGameSession(session: GameSession): Long {
         val db = writableDatabase
         val values = ContentValues().apply {

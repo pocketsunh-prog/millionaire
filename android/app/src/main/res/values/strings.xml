@@ -118,4 +118,21 @@
     <string name="cancel">Cancel</string>
     <string name="category_deleted_toast">%s deleted from the offline database</string>
     <string name="category_restored_toast">%s restored</string>
+
+    <!-- Export / import questions -->
+    <string name="data_section">Data</string>
+    <string name="export_questions">Export Questions</string>
+    <string name="export_questions_summary">Save questions to a file you choose</string>
+    <string name="import_questions">Import Questions</string>
+    <string name="import_questions_summary">Add questions from a file, skipping duplicates</string>
+    <string name="export_choose_type">Export which questions?</string>
+    <string name="export_all_types">All types</string>
+    <string name="default_export_filename">questions.json</string>
+    <string name="export_success">Exported %1$d questions</string>
+    <string name="export_failed">Export failed: %1$s</string>
+    <string name="import_success">Imported %1$d questions · %2$d duplicates skipped</string>
+    <string name="import_failed">Import failed: %1$s</string>
+    <string name="import_confirm_title">Import questions?</string>
+    <string name="import_confirm_message">This file holds %1$d questions across %2$d categories. New questions will be added; duplicates are skipped.</string>
+    <string name="export_empty">No questions to export yet — sync or add some first.</string>
 </resources>

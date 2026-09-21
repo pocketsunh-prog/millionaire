@@ -221,6 +221,44 @@ persisted in SharedPreferences.
 > **Adding a sound:** create it in `tools/generate-audio.js`, regenerate, then add
 > it to the `Sfx` enum in `SoundManager.kt`.
 
+## Exporting & importing questions
+
+**Settings → Export Questions** writes the offline question bank to a JSON file;
+**Settings → Import Questions** reads one back in. Both use Android's Storage Access
+Framework, so the user picks the save location / file — no storage permission needed.
+
+**Export** (`data/io/QuestionIo.kt`):
+- A dialog lets the user export **All types** or a single category; the category row(s)
+  travel with the questions so they are meaningful on import.
+- The system file creator opens with the default name `questions.json`; the user can
+  rename it and choose any folder.
+- Output is a self-contained, human-readable JSON document (stable snake_case keys that
+  mirror the database columns, so it survives an R8 obfuscation):
+
+```json
+{
+  "format": "millionaire_questions",
+  "version": 1,
+  "exported_at": "2026-09-21T06:04:54",
+  "categories": [ { "id": 1, "name": "Science", ... } ],
+  "questions": [ { "id": 1, "category_id": 1, "question": "...", "option_a": "...", ... } ]
+}
+```
+
+**Import**:
+- The system file picker filters to JSON.
+- A confirmation dialog reports how many questions/categories the file holds before
+  touching the database.
+- Categories are added only if unknown locally (the user's `enabled`/`deleted`
+  overrides are preserved). Questions use `INSERT OR IGNORE` by id, so any question
+  already present is silently skipped — **re-importing the same file never creates
+  duplicates**.
+- A toast reports the result: `Imported 1 question · 83 duplicates skipped`.
+
+Verified on a Pixel_10 emulator (Android 17): export produced valid JSON
+(Node.js-validated: 84 questions, 6 categories); re-importing the same file kept the
+count at 84 (duplicates skipped).
+
 ## Testing without the backend
 
 The real backend needs Docker + MySQL. To exercise sync, offline login and the
@@ -242,15 +280,20 @@ log in again to check offline login.
 
 ```
 app/src/main/java/com/millionaire/game/
+├── MillionaireApp.kt         # Application; initialises the audio engine
 ├── MainActivity.kt          # Entry point + sync
 ├── LoginActivity.kt         # User authentication + post-login sync
 ├── RegisterActivity.kt      # Account creation
 ├── GameActivity.kt          # Core game logic
 ├── CategorySelectActivity.kt # Pick category
+├── CategoryManagementActivity.kt # Enable / disable / delete offline categories
 ├── LeaderboardActivity.kt   # Rankings (online + offline fallback)
 ├── ProfileActivity.kt       # User stats
+├── audio/
+│   └── SoundManager.kt      # Music + sound-effect engine (BgmHost interface)
 ├── data/
 │   ├── Model.kt             # Data classes
+│   ├── io/QuestionIo.kt     # File export / import of the question bank
 │   ├── db/DatabaseHelper.kt # SQLite management
 │   ├── api/
 │   │   ├── ApiClient.kt     # Retrofit singleton
@@ -261,6 +304,7 @@ app/src/main/java/com/millionaire/game/
 │       └── SyncWorker.kt    # WorkManager background sync
 └── util/
     ├── SessionManager.kt    # Auth session
+    ├── CredentialCache.kt   # Cached credentials for offline login
     ├── NetworkUtil.kt      # Connectivity monitoring
     └── PrizeLadder.kt       # Prize amounts
 ```
